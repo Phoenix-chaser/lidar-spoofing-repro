@@ -226,6 +226,32 @@ def step8_analytic_check(log, k, trials):
     log("  → 闭式解析与蒙特卡洛交叉验证一致，复现结果不依赖 MC 实现细节")
 
 
+def step9_closed_loop(log):
+    """闭环仿真：2-D LiDAR 仿真 + 式(2)攻击注入 + T² 检测滤除（Fig.3/4 的软件模拟）。"""
+    from src.simulator import run_closed_loop, summarize, plot_closed_loop
+    log("")
+    log("=" * 70)
+    log("步骤 9：闭环仿真 —— 攻击注入 + 检测滤除（论文 Fig.3/4 的软件模拟）")
+    log("=" * 70)
+    results, scans = run_closed_loop()
+    table, n_corr, n_tot = summarize(results)
+    for line in table.splitlines():
+        log("  " + line)
+    plot_closed_loop(results, scans, os.path.join(FIG_DIR, "fig_closed_loop.png"))
+    with open(os.path.join(RES_DIR, "closed_loop.csv"), "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["target", "n", "T2", "crit", "verdict", "truth", "correct"])
+        for label, r in sorted(results.items()):
+            w.writerow([label, r["n"], f"{r['T2']:.2f}", f"{r['crit']:.2f}",
+                        "spoofed" if r["reject"] else "legit",
+                        "spoofed" if r["truth_spoofed"] else "legit",
+                        r["reject"] == r["truth_spoofed"]])
+    log("  已保存 figures/fig_closed_loop.png 与 results/closed_loop.csv")
+    log("  说明：fake_beside 漏检是论文 §VII-D 局限 1 的如实复现（相对径向速度≈0）；")
+    log("        检验取前 20 个样本的接近段窗口（对应论文 §VII-D-2 匀速假设），")
+    log("        整条通过轨迹的扫频方差会稀释 2:1 失配（详见 README）。")
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--quick", action="store_true", help="快速冒烟测试")
@@ -247,6 +273,7 @@ def main():
     step6_fig14(log, det.NOISE_SCALE_K, trials)
     step7_anchors(log, det.NOISE_SCALE_K, trials)
     step8_analytic_check(log, det.NOISE_SCALE_K, trials)
+    step9_closed_loop(log)
 
     log("")
     log(f"全部完成，总耗时 {time.time() - t0:.1f}s；图表在 figures/，数据在 results/")

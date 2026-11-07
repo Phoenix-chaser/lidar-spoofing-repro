@@ -1,0 +1,9 @@
+target,n,T2,crit,verdict,truth,correct
+bike,20,0.12,6.72,legit,legit,True
+fake_ahead,20,47.79,6.72,spoofed,spoofed,True
+fake_beside,20,0.47,6.72,legit,spoofed,False
+fake_static,20,546.09,6.72,spoofed,spoofed,True
+front_wall,20,4.41,6.72,legit,legit,True
+left_wall,20,0.02,6.72,legit,legit,True
+pillar,20,0.18,6.72,legit,legit,True
+right_wall,20,0.22,6.72,legit,legit,True
