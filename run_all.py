@@ -252,6 +252,69 @@ def step9_closed_loop(log):
     log("        整条通过轨迹的扫频方差会稀释 2:1 失配（详见 README）。")
 
 
+def step10_interferometer(log):
+    """干涉测速 testbed 仿真（论文 §IV-B / Fig.6/7 的纯软件复现）。"""
+    from src import interferometer as itf
+    log("")
+    log("=" * 70)
+    log("步骤 10：干涉测速 testbed 仿真（论文 Fig.6/7）")
+    log("=" * 70)
+    mix = itf.verify_full_field_mixing()
+    log(f"  全场混频验证: |E|²低通 vs 论文 Pout 公式, 最大相对误差 = "
+        f"{mix['max_relative_error']:.1e}（滑动平均低通的通带下垂，模型本身精确成立）")
+    out = itf.run_fig7()
+    a, b = out["case_a"], out["case_b"]
+    log(f"  Fig.7(a): v=0.75 cm/s → Δf={a['delta_f']/1e3:.2f} kHz"
+        f"（理论 {2*a['v_true']/itf.LASER_WAVELENGTH/1e3:.2f}），"
+        f"v̂={a['v_hat']*100:.3f} cm/s，误差 {a['err']*100:.2f}%")
+    log(f"  Fig.7(b): v̄=1.55 cm/s（含低速段→双峰，取最高能量峰）→ "
+        f"Δf={b['delta_f']/1e3:.2f} kHz（论文实测 48.72），"
+        f"v̂={b['v_hat']*100:.3f} cm/s，误差 {b['err']*100:.2f}%")
+    for pc in out["paper_check"]:
+        log(f"  论文数值反推: Δf={pc['paper_delta_f_hz']/1e3:.2f} kHz ↔ "
+            f"v̂={pc['implied_v']*100:.3f} cm/s（论文标称 {pc['paper_v']*100:.2f}，"
+            f"偏差 {pc['rel_err_vs_stated']*100:.1f}%；理论 Δf="
+            f"{pc['theory_delta_f_hz']/1e3:.2f} kHz）")
+    stats = itf.mc_error_stats()
+    log(f"  MC 误差统计（速度抖动2%+噪声30dB, 200次）: 平均 {stats['mean_abs_err']*100:.2f}%，"
+        f"p95 {stats['p95_abs_err']*100:.2f}% —— 与论文 \"~3% 速度检测误差\" 声明一致")
+
+    # Fig.7 风格频谱图
+    fig, axes = plt.subplots(1, 2, figsize=(12, 4.2))
+    for ax, case, title in zip(
+            axes, (a, b),
+            (r"(a) $v$=0.75 cm/s (clean)", r"(b) $\bar{v}$=1.55 cm/s (two peaks)")):
+        spec = case["spec"] / case["spec"].max()
+        ax.plot(case["freqs"] / 1e3, 20 * np.log10(spec + 1e-12), lw=0.8)
+        ax.axvline(case["delta_f"] / 1e3, color="r", ls="--", lw=1)
+        ax.axvline(2 * case["v_true"] / itf.LASER_WAVELENGTH / 1e3,
+                   color="g", ls=":", lw=1)
+        ax.set_xlim(0, 80)
+        ax.set_ylim(-60, 3)
+        ax.set_xlabel("Frequency (kHz)")
+        ax.set_title(title)
+        ax.grid(alpha=0.3)
+    axes[0].set_ylabel("Normalized spectrum (dB)")
+    axes[0].legend(["FFT spectrum", rf"peak $\Delta f$={a['delta_f']/1e3:.2f} kHz",
+                    "theory"], fontsize=8)
+    axes[1].legend(["FFT spectrum", rf"peak $\Delta f$={b['delta_f']/1e3:.2f} kHz",
+                    "theory"], fontsize=8)
+    fig.suptitle("Fig.7 reproduction: Doppler-shift spectrum from the "
+                 "interferometer testbed simulation (635 nm, SNR 30 dB)")
+    fig.tight_layout()
+    fig.savefig(os.path.join(FIG_DIR, "fig_interferometer.png"), dpi=150)
+    plt.close(fig)
+    with open(os.path.join(RES_DIR, "interferometer.csv"), "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["case", "v_true_cm_s", "delta_f_hz", "theory_hz",
+                    "v_hat_cm_s", "rel_err"])
+        for name, case in (("a", a), ("b", b)):
+            w.writerow([name, case["v_true"] * 100, f"{case['delta_f']:.1f}",
+                        f"{2*case['v_true']/itf.LASER_WAVELENGTH:.1f}",
+                        f"{case['v_hat']*100:.4f}", f"{case['err']:.4f}"])
+    log("  已保存 figures/fig_interferometer.png 与 results/interferometer.csv")
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--quick", action="store_true", help="快速冒烟测试")
@@ -274,6 +337,7 @@ def main():
     step7_anchors(log, det.NOISE_SCALE_K, trials)
     step8_analytic_check(log, det.NOISE_SCALE_K, trials)
     step9_closed_loop(log)
+    step10_interferometer(log)
 
     log("")
     log(f"全部完成，总耗时 {time.time() - t0:.1f}s；图表在 figures/，数据在 results/")

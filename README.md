@@ -7,35 +7,41 @@
 > Vol. 11, No. 11, pp. 20673–20689, June 2024. DOI: [10.1109/JIOT.2024.3371378](https://doi.org/10.1109/JIOT.2024.3371378)
 
 **English summary** — This repository reproduces, in pure Python, every software-reproducible
-result of the paper: the Doppler-shift models (Eq. 3–6, 15), Proposition 1 (verified to machine
-precision under a consistent coordinate convention), the cooperative-LiDAR experiment (Fig. 11),
-the Hotelling T²/t-test detection framework (Eq. 17–19), and the power analysis (Figs. 13–14)
-including both reported F1 anchors (0.923 / 0.97). Monte-Carlo results are cross-validated
-against a closed-form noncentral-F power computation (max deviation 0.007). Four internal
-inconsistencies found in the paper's printed equations are documented below (F1–F4). The paper
-has no official code; its authors state the main detection results are computer-simulation
-based (§VII-B), so this reproduction is faithful in methodology. 中文说明见下文。
+result of the paper — including both of its hardware experiments, each replaced by an
+equivalent simulation: (i) the Doppler-shift models (Eq. 3–6, 15); (ii) Proposition 1 (verified
+to machine precision under a consistent coordinate convention); (iii) the cooperative-LiDAR
+experiment (Fig. 11); (iv) the Hotelling T²/t-test detection framework (Eq. 17–19) and power
+analysis (Figs. 13–14) with both reported F1 anchors (0.923 / 0.97) matched; (v) a closed-loop
+2-D LiDAR simulation reproducing the spoofing-attack demo (Fig. 3/4) — attack scenarios 1 and 3
+are detected, a co-speed abeam fake is missed exactly as the paper's own limitation predicts;
+(vi) a DSP simulation of the interferometer testbed (Fig. 6/7) matching its measured Doppler
+shifts. Monte-Carlo results are cross-validated against closed-form noncentral-F power (max
+deviation 0.007). Four internal inconsistencies found in the paper's printed equations are
+documented below (F1–F4). The paper has no official code; its authors state the main detection
+results are computer-simulation based (§VII-B), so this reproduction is faithful in methodology.
+中文说明见下文。
 
 ---
 
 ## 复现范围
 
-| ✅ 已复现（软件） | ❌ 未复现 |
+| ✅ 已复现（全部软件） | 对应论文内容 |
 |---|---|
-| 多普勒频移模型（式 3–6、15） | ThorLabs 光学干涉 Doppler 提取 testbed（论文 Fig. 6/7；纯 DSP 仿真即可覆盖，未做） |
-| Proposition 1 数值验证（式 8–14） | 实机（双 YD X2L）攻击演示——已用软件闭环模拟等效覆盖（见下） |
-| Fig.11 协同式检测数值实验 | |
-| t 检验 / Hotelling T²（式 17–19） | |
-| 功效分析：Fig.13、Fig.14、F1 锚点 | |
-| 非中心 F 解析功效交叉验证（新增） | |
-| **攻击注入→检测滤除闭环仿真**（Fig. 3/4 的软件模拟，新增） | |
+| 多普勒频移模型（式 3–6、15） | 核心物理：合法 2× / 欺骗 1× |
+| Proposition 1 数值验证（式 8–14） | 协同检测的理论基础 |
+| Fig.11 协同式检测数值实验 | 攻击模型 2 检测 |
+| t 检验 / Hotelling T²（式 17–19） + 功效分析 Fig.13/14、F1 锚点 | §VI 统计检测框架 |
+| 非中心 F 解析功效交叉验证（新增） | 独立复核 |
+| **攻击注入→检测滤除闭环仿真** | Fig. 3/4 实机攻击演示的软件等效（含论文攻击场景 1/3 与自述局限 1） |
+| **干涉测速 testbed 仿真** | Fig. 6/7 的纯 DSP 复现（论文 §IV-B 信号模型，定量对齐其数值） |
 
+论文两个硬件实验均已用软件等效覆盖；仅"实物本身"（商用 LiDAR 真被骗、真实光路）天然需要硬件。
 论文作者在 §VII-B 自述其"主要性能评估为计算机仿真"，因此本复现与论文验证方法一致。
 
 ## 快速开始
 
 ```bash
-python3 run_all.py           # 完整精度，约 2–3 分钟，9 个步骤全部输出
+python3 run_all.py           # 完整精度，约 2–3 分钟，10 个步骤全部输出
 python3 run_all.py --quick   # 快速冒烟，约 40 秒
 ```
 
@@ -79,6 +85,7 @@ SNR 每降一个数量级，所需样本量约 ×10（city：51 → 477 → 4634
 | H0 经验显著性水平 | α=0.05 | 0.0485–0.0493 | ✅ |
 | **解析功效 vs 蒙特卡洛（独立交叉验证）** | — | 最大偏差 0.007（MC 误差内） | ✅ 新增 |
 | **闭环：合法目标不误报 / 协同欺骗检出** | — | 5 合法全过、场景 1/3 假目标全检出；侧方同速假目标漏检（= 论文自述局限 1） | ✅ 新增 |
+| **干涉 testbed：Fig.7 数值** | 24.10 / 48.72 kHz，误差~3% | 23.62（理论）/ 48.82 kHz；MC 误差 p95 3.7% | ✅ 新增 |
 
 完整数值见 `results/run_full.log`、`results/anchors.txt`、`results/analytic_check.csv`。
 
@@ -108,6 +115,24 @@ SNR 每降一个数量级，所需样本量约 ×10（city：51 → 477 → 4634
 - **目标级跟踪**：ToF 与 Doppler 必须对准同一目标点（论文式 8/9 的跟踪思想）；固定波束角
   扫过无限长墙面时命中点沿墙滑动，会让两个估计量失配产生假象。
 
+### 6. 干涉测速 testbed 仿真（新增）—— 论文 Fig. 6/7 的纯 DSP 复现
+
+论文用 ThorLabs 光学干涉 testbed 证明"能从激光信号提取多普勒频移"。其信号模型
+（§IV-B1 的 YLO/YM/Pout 公式）已完整给出，故无需硬件即可定量复现：
+
+![Interferometer simulation](figures/fig_interferometer.png)
+
+| 项目 | 论文 | 本仿真 | 状态 |
+|---|---|---|---|
+| Pout 拍频公式（全场混频+低通数值验证） | §IV-B1 | 残差 2.9e-3（=低通滤波器通带下垂） | ✅ |
+| Fig.7(a)：v=0.75 cm/s 的 Δf | 24.10 kHz | 23.62 kHz（=理论值 2v/λ） | ✅ |
+| Fig.7(b)：v̄=1.55 cm/s，双峰取最高 | 48.72 kHz | 48.82 kHz（理论 48.82） | ✅ |
+| 速度估计误差 | "约 3%" | MC（2% 抖动+30dB 噪声）：均值 1.5%，p95 3.7% | ✅ |
+
+数值差异的量化解释：由论文实测 Δf 反推 v̂=Δf·λ/2 得 0.765 / 1.547 cm/s，与其标称
+0.75 / 1.55 偏差 2.0% / 0.2%——即论文 Fig.7(a) 的 24.10 kHz（理论 23.62）来自其
+电机滑轨速度标定误差，而非模型偏差。
+
 ## 唯一自由参数：噪声幅度 K
 
 论文式(28)的 MLE 方差常数印制不全（见 A3）。本复现以论文自己的锚点
@@ -124,7 +149,8 @@ SNR 每降一个数量级，所需样本量约 ×10（city：51 → 477 → 4634
 | `src/detection.py` | 式(17) t 检验；式(18)(19) Hotelling T²（系数修正，见 F2）；§VI-D 样本生成设置；式(28) 噪声模型 |
 | `src/power_analysis.py` | 最小样本量搜索；Fig.13/14；F1 锚点；K 校准；**非中心 F 解析功效**（交叉验证） |
 | `src/simulator.py` | **闭环仿真**：2-D LiDAR 光线投射 + 式(2)攻击注入 + 式(5)(6)Doppler 合成 + 目标级跟踪 + T² 滤除（Fig.3/4 的软件模拟） |
-| `run_all.py` | 一键复现 9 个步骤并出图 |
+| `src/interferometer.py` | **干涉 testbed 仿真**：§IV-B1 信号模型 + 全场混频验证 + FFT 提取 Δf + Fig.7 两案例复现（Fig.6/7 的软件模拟） |
+| `run_all.py` | 一键复现 10 个步骤并出图 |
 
 ## 建模假设（论文未完全给出、需补全的部分）
 
@@ -156,13 +182,14 @@ SNR 每降一个数量级，所需样本量约 ×10（city：51 → 477 → 4634
 
 ```
 lidar_spoofing_repro/
-├── run_all.py              # 一键复现入口（9 步）
+├── run_all.py              # 一键复现入口（10 步）
 ├── src/
 │   ├── doppler.py          # 式(3)-(6)、(15)
 │   ├── cooperative.py      # 式(8)-(14)、Prop.1、Fig.11
 │   ├── detection.py        # 样本生成 + 式(17) + 式(18)(19)
 │   ├── power_analysis.py   # Fig.13/14 + 锚点 + K 校准 + 解析验证
-│   └── simulator.py        # 闭环仿真（攻击注入 + 检测滤除）
-├── figures/                # 复现图（fig11/13/14/closed_loop）
+│   ├── simulator.py        # 闭环仿真（攻击注入 + 检测滤除）
+│   └── interferometer.py   # 干涉 testbed 仿真（Fig.6/7）
+├── figures/                # 复现图（fig11/13/14/closed_loop/interferometer）
 └── results/                # CSV、锚点、交叉验证、完整日志
 ```
