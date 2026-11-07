@@ -1,0 +1,13 @@
+F1_formula(a=0.05,b=0.1) = 0.923076923076923
+[fractional] power(city,atk1,p=0.1,snr=1e-4,n=50) = 0.90225
+[fractional] F1_worst(p=0.1) = 0.9243180945063388
+[fractional] F1_highway(p=0.4,n=50) = 0.9756097560975611
+[fractional] F1_ramp(p=0.4,n=50) = 0.9756097560975611
+[fractional] F1_city(p=0.4,n=50) = 0.9756097560975611
+size_H0(highway,n=50) = 0.04925
+size_H0(ramp,n=50) = 0.04875
+size_H0(city,n=50) = 0.0485
+power_ttest(city,atk1,p=0.1,snr=1e-4,n=50) = 0.94775
+[bernoulli] power(city,atk1,p=0.1,snr=1e-4,n=50) = 0.367
+[bernoulli] F1(p=0.1,n=50) = 0.5179957657021877
+[bernoulli] min_samples(city,atk1,p=0.1,snr=1e-4) = 145
