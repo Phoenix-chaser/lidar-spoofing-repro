@@ -11,11 +11,62 @@
      以及物理忠实的 bernoulli 混合模型对比。
 """
 import numpy as np
+from scipy import stats
 
 from . import detection as det
 
 ALPHA = 0.05          # 论文：第一类错误 α=0.05
 TARGET_POWER = 0.9    # 论文：功效 0.9（即 β=0.1）
+
+
+# ---------------------------------------------------------------- 解析功效（独立验证）
+def analytic_power(n, road, attack, p, snr, alpha=ALPHA, k=None, model="fractional"):
+    """非中心 F 闭式功效 —— 对蒙特卡洛结果的独立解析验证。
+
+    两样本 Hotelling T²（等样本量 n，维度 p=2）在 Ha 下近似服从非中心 F：
+        (2n-3)/(4n-4) · T² ~ F'_{2, 2n-3}(λ)，  λ = n·δᵀ(Σ_D+Σ_T)⁻¹δ
+    其中 δ = x̄Dop - x̄ToF 的总体均值差，Σ_D/Σ_T 为两组真实协方差
+    （fractional 模型下两组均为 i.i.d.，bernoulli 模型下 Σ_D 含混合方差，
+    此时解析式为近似）。
+    """
+    v_rel, a_rel = det.relative_motion(road)
+    sv_d, sa_d = det.doppler_noise_std(snr, k)
+    sv_t = det.TOF_ERR_RATE * v_rel
+    sa_t = det.TOF_ERR_RATE * a_rel
+
+    if model == "fractional":
+        mv_d, mv_t = det.SCENARIO_MEANS[attack](v_rel, a_rel)
+        delta = np.array([p * (mv_d - mv_t), 0.0])
+        cov_sum = np.diag([sv_d ** 2 + sv_t ** 2, sa_d ** 2 + sa_t ** 2])
+    else:  # bernoulli：Doppler 组含混合方差（解析近似）
+        mv_d, mv_t = det.SCENARIO_MEANS[attack](v_rel, a_rel)
+        delta = np.array([p * (mv_d - mv_t), 0.0])
+        mix_var = p * (1 - p) * (mv_d - v_rel) ** 2
+        cov_sum = np.diag([sv_d ** 2 + mix_var + sv_t ** 2,
+                           sa_d ** 2 + sa_t ** 2])
+    lam = n * float(delta @ np.linalg.inv(cov_sum) @ delta)
+    f_crit = stats.f.ppf(1 - alpha, 2, 2 * n - 3)   # T² 的 F 等价临界值
+    return stats.ncf.sf(f_crit, 2, 2 * n - 3, lam)
+
+
+def analytic_vs_mc_checks(rng, k, cases=None, n=50, trials=8000):
+    """在若干设置下对比解析功效与蒙特卡洛功效（应一致，偏差 ≤ MC 误差）。
+
+    默认选取功效处于中段（0.1–0.95）的设置，使对比最具区分度。
+    """
+    if cases is None:
+        cases = [
+            ("city", 1, 0.10, 1e-4), ("city", 1, 0.12, 1e-4),
+            ("highway", 1, 0.05, 1e-4), ("ramp", 2, 0.07, 1e-4),
+            ("city", 1, 0.10, 1e-5), ("city", 3, 0.10, 1e-4),
+        ]
+    rows = []
+    for road, attack, p, snr in cases:
+        pw_mc = det.empirical_reject_rate(rng, n, road, attack, p, snr,
+                                          alpha=ALPHA, trials=trials, k=k)
+        pw_an = analytic_power(n, road, attack, p, snr, alpha=ALPHA, k=k)
+        rows.append((road, attack, p, snr, pw_mc, pw_an, pw_mc - pw_an))
+    return rows
 
 
 # ---------------------------------------------------------------- 校准

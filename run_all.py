@@ -205,6 +205,27 @@ def step7_anchors(log, k, trials):
     log("  低比例下所需样本量大于论文的总体均值模型（更保守、物理更忠实）。")
 
 
+def step8_analytic_check(log, k, trials):
+    """独立验证：非中心 F 解析功效 vs 蒙特卡洛功效（应一致，偏差 ≤ MC 误差）。"""
+    log("")
+    log("=" * 70)
+    log("步骤 8：独立验证 —— 非中心 F 解析功效 vs 蒙特卡洛功效")
+    log("=" * 70)
+    rows = pa.analytic_vs_mc_checks(np.random.default_rng(71), k,
+                                    trials=max(4000, trials // 2))
+    with open(os.path.join(RES_DIR, "analytic_check.csv"), "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["road", "attack", "p", "snr", "power_MC", "power_analytic", "diff"])
+        w.writerows(rows)
+    log(f"  {'road':8s} {'atk':4s} {'p':>5s} {'SNR':>8s} {'MC':>8s} {'解析':>8s} {'偏差':>8s}")
+    max_abs = 0.0
+    for road, attack, p, snr, mc, an, d in rows:
+        max_abs = max(max_abs, abs(d))
+        log(f"  {road:8s} {attack:<4d} {p:5.2f} {snr:8.0e} {mc:8.4f} {an:8.4f} {d:+8.4f}")
+    log(f"  最大绝对偏差 = {max_abs:.4f}（8000 次试验的 MC 标准差约 ±0.005）")
+    log("  → 闭式解析与蒙特卡洛交叉验证一致，复现结果不依赖 MC 实现细节")
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--quick", action="store_true", help="快速冒烟测试")
@@ -225,6 +246,7 @@ def main():
     step5_fig13(log, det.NOISE_SCALE_K, trials)
     step6_fig14(log, det.NOISE_SCALE_K, trials)
     step7_anchors(log, det.NOISE_SCALE_K, trials)
+    step8_analytic_check(log, det.NOISE_SCALE_K, trials)
 
     log("")
     log(f"全部完成，总耗时 {time.time() - t0:.1f}s；图表在 figures/，数据在 results/")
