@@ -1,6 +1,6 @@
 # LiDAR Spoofing Detection — Software Reproduction
 
-![Python](https://img.shields.io/badge/Python-3.8%2B-blue) ![numpy](https://img.shields.io/badge/numpy-%E2%89%A51.24-orange) ![scipy](https://img.shields.io/badge/scipy-%E2%89%A51.10-orange) ![status](https://img.shields.io/badge/reproduction-complete-brightgreen) ![deterministic](https://img.shields.io/badge/runs-deterministic-informational)
+![Python](https://img.shields.io/badge/Python-3.8%2B-blue) ![numpy](https://img.shields.io/badge/numpy-%E2%89%A51.24-orange) ![scipy](https://img.shields.io/badge/scipy-%E2%89%A51.10-orange) ![status](https://img.shields.io/badge/reproduction-complete-brightgreen) ![deterministic](https://img.shields.io/badge/runs-deterministic-informational) ![license](https://img.shields.io/badge/license-MIT-green)
 
 > **Paper**: Xueyang Hu, Tian Liu, Tao Shu, Diep N. Nguyen, *"Spoofing Detection for LiDAR in
 > Autonomous Vehicles: A Physical-Layer Approach"*, **IEEE Internet of Things Journal**,
