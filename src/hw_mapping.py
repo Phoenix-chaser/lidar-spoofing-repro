@@ -214,10 +214,10 @@ def _draw_car(ax, x, y, heading_deg=90.0):
     from matplotlib.patches import Rectangle, Circle
     import matplotlib.transforms as mtransforms
     tr = mtransforms.Affine2D().rotate_deg(heading_deg - 90).translate(x, y) + ax.transData
-    body = Rectangle((-1.0, -1.8), 2.0, 3.6, fc="#166534", ec="#4ade80",
-                     lw=2.0, transform=tr, zorder=6)
+    body = Rectangle((-1.0, -1.8), 2.0, 3.6, fc="#f8fafc", ec="#fbbf24",
+                     lw=2.2, transform=tr, zorder=6)
     ax.add_patch(body)
-    lidar = Circle((0, 0.5), 0.5, fc="#bbf7d0", ec="#052e16", lw=1.4,
+    lidar = Circle((0, 0.5), 0.5, fc="#0b1220", ec="#fbbf24", lw=1.6,
                    transform=tr, zorder=7)
     ax.add_patch(lidar)
 
@@ -245,8 +245,8 @@ def _draw_virtual_scene(ax_scene):
         ax_scene.text(r * np.cos(np.deg2rad(105)), r * np.sin(np.deg2rad(105)),
                       f"{r} m", fontsize=11, color="#cbd5e1", ha="center",
                       va="center", zorder=9,
-                      bbox=dict(boxstyle="round,pad=0.18", fc=SC_BG,
-                                ec="none", alpha=0.75))
+                      bbox=dict(boxstyle="round,pad=0.25", fc=SC_BG,
+                                ec="none", alpha=0.95))
     ax_scene.axhline(0, color=SC_GRID, lw=0.6)
     ax_scene.axvline(0, color=SC_GRID, lw=0.6)
 
@@ -260,14 +260,16 @@ def _draw_virtual_scene(ax_scene):
     for deg, (d, label, spf, _) in frame.items():
         th = np.deg2rad(deg)
         x, y = d * np.cos(th), d * np.sin(th)
-        ax_scene.plot([0, x], [0, y], color=SC_BEAM, lw=0.45, alpha=0.14,
-                      zorder=1)
+        if deg % 2 == 0:                # 每 2° 画一条光束，减密
+            x0, y0 = 2.5 * np.cos(th), 2.5 * np.sin(th)   # 距车 2.5m 起笔
+            ax_scene.plot([x0, x], [y0, y],
+                          color=SC_BEAM, lw=0.45, alpha=0.12, zorder=1)
         if spf:
             ax_scene.plot(x, y, "x", color=SC_SPOOF, ms=8, mew=2, zorder=5)
         elif label == "bike":
             ax_scene.plot(x, y, "^", color=SC_BIKE, ms=7, zorder=5)
         else:
-            ax_scene.plot(x, y, "o", color=SC_LEGIT, ms=3.2,
+            ax_scene.plot(x, y, "o", color=SC_LEGIT, ms=2.2, alpha=0.85,
                           markeredgecolor="none", zorder=4)
 
     # 三类欺骗注入的攻击窗口扇形（红色）
@@ -281,15 +283,17 @@ def _draw_virtual_scene(ax_scene):
     ]
     for center_deg, halfw, r, lab in wedges:
         w = Wedge((0, 0), r, center_deg - halfw, center_deg + halfw,
-                  fc=SC_SPOOF, alpha=0.30, ec="#fca5a5", lw=1.2, ls="--", zorder=2)
+                  width=r - 3.0,   # 环形：距车 3m 起，避免与车身粘连
+                  fc=SC_SPOOF, alpha=0.25, ec="#fca5a5", lw=1.2, ls="--", zorder=2)
         ax_scene.add_patch(w)
 
     # 自车（车形 + LiDAR + 速度矢量）
     _draw_car(ax_scene, 0, 0)
     ax_scene.annotate("", xy=(0, 7.5), xytext=(0, 3.2),
-                      arrowprops=dict(arrowstyle="-|>", color="#4ade80", lw=2))
-    ax_scene.text(-0.9, 6.0, "11 m/s", fontsize=12, color="#4ade80",
-                  weight="bold", ha="right", zorder=9)
+                      arrowprops=dict(arrowstyle="-|>", color="#fbbf24", lw=2.2))
+    ax_scene.text(-0.9, 6.0, "11 m/s", fontsize=12, color="#fbbf24",
+                  weight="bold", ha="right", zorder=9,
+                  bbox=dict(boxstyle="round,pad=0.2", fc=SC_BG, ec="none"))
 
     # 标注
     def note(text, xy, xytext, color):
@@ -299,8 +303,8 @@ def _draw_virtual_scene(ax_scene):
                           bbox=dict(boxstyle="round,pad=0.3", fc=SC_BG,
                                     ec=color, lw=0.7, alpha=0.85))
 
-    note("自车 + 虚拟 2-D LiDAR\n1°×360°，0.1 s/帧", (1.4, 1.9), (-10, -6.2),
-         "#4ade80")
+    note("自车 + 虚拟 2-D LiDAR\n1°×360°，0.1 s/帧", (-1.3, -2.0), (-10, -6.2),
+         "#fbbf24")
     note("虚拟攻击器\n（<60 美元三件套）",
          tuple(attacks["ahead"]["attacker"]), (6.2, 37), "#f87171")
     note("假静态墙\n（场景1）", tuple(attacks["static"]["pos"]), (-16.2, 33),

@@ -268,7 +268,7 @@ def plot_closed_loop(results, scans, out_path, scan_idx=10):
             elif label == "bike":
                 ax.plot(x, y, "^", color=BIKE, ms=7)
             else:
-                ax.plot(x, y, "o", color=LEGIT, ms=3.4,
+                ax.plot(x, y, "o", color=LEGIT, ms=2.6, alpha=0.85,
                         markeredgecolor="none")
         if filtered:
             miss_xy = (ego_xy[0] + 9.0, ego_xy[1])
@@ -282,10 +282,10 @@ def plot_closed_loop(results, scans, out_path, scan_idx=10):
         tr = (mtransforms.Affine2D().rotate_deg(0).translate(*ego_xy)
               + ax.transData)
         ax.add_patch(Rectangle((ego_xy[0] - 1.0, ego_xy[1] - 1.8), 2.0, 3.6,
-                               fc="#166534", ec=LEGIT, lw=2, transform=tr,
+                               fc="#f8fafc", ec="#fbbf24", lw=2.2, transform=tr,
                                zorder=6))
-        ax.add_patch(Circle((ego_xy[0], ego_xy[1] + 0.5), 0.5, fc="#bbf7d0",
-                            ec="#052e16", lw=1.4, zorder=7))
+        ax.add_patch(Circle((ego_xy[0], ego_xy[1] + 0.5), 0.5, fc="#0b1220",
+                            ec="#fbbf24", lw=1.6, zorder=7))
         ax.set_title(title, fontsize=14)
         ax.set_xlabel("x (m)", fontsize=12.5)
         ax.set_aspect("equal")
@@ -300,8 +300,8 @@ def plot_closed_loop(results, scans, out_path, scan_idx=10):
                    label="自行车（动态合法）"),
         plt.Line2D([], [], marker="o", ls="", color=LEGIT, ms=6,
                    label="合法静态点云"),
-        plt.Line2D([], [], marker="s", ls="", color="#4ade80", ms=10,
-                   markeredgecolor="#052e16", markeredgewidth=1.5,
+        plt.Line2D([], [], marker="s", ls="", color="#fbbf24", ms=10,
+                   markeredgecolor="#78350f", markeredgewidth=1.5,
                    label="自车 + LiDAR"),
     ]
     fig.legend(handles=handles, fontsize=12, loc="lower center", ncol=4,
