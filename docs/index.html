@@ -262,7 +262,7 @@ const C=3e8, LAMBDA=905e-9, K=47.75, N=256;
     const dfL=2*v/LAMBDA, dfS=v/LAMBDA;
     $("dfL").textContent=(dfL/1e6).toFixed(2)+" MHz"; $("dfS").textContent=(dfS/1e6).toFixed(2)+" MHz";
     $("dfR").textContent=(dfL/dfS).toFixed(2);
-    const carX=W*0.22, carY=H*0.52, objX=W*0.80, atkX=W*0.56, atkY=H*0.86;
+    const carX=W*0.22, carY=H*0.38, objX=W*0.80, atkX=W*0.56, atkY=H*0.70;
     // 场景
     ctx.fillStyle="#0e1626"; ctx.fillRect(0,0,W,H);
     // 自车
@@ -274,9 +274,9 @@ const C=3e8, LAMBDA=905e-9, K=47.75, N=256;
     ctx.fillText("自车 LiDAR",carX,carY+48);
     ctx.fillText("v = "+v+" m/s →",carX,carY-42);
     // 物体
-    ctx.fillStyle="#94a3b8"; ctx.fillRect(objX-10,objY_(),20,H*0.5);
-    function objY_(){return H*0.30}
-    ctx.fillStyle="#cbd5e1"; ctx.fillText("物体（静止）",objX,H*0.27);
+    ctx.fillStyle="#94a3b8"; ctx.fillRect(objX-10,objY_(),20,H*0.44);
+    function objY_(){return H*0.16}
+    ctx.fillStyle="#cbd5e1"; ctx.fillText("物体（静止）",objX,H*0.12);
     // 攻击者
     if(mode==="spoof"||mode==="both"){
       ctx.fillStyle="#7f1d1d"; ctx.strokeStyle="#f87171"; ctx.lineWidth=2.5;
@@ -306,30 +306,33 @@ const C=3e8, LAMBDA=905e-9, K=47.75, N=256;
       emit(goFwd?carX:objX, carY, "#38bdf8", dist, .8);
       // 脉冲点
       ctx.fillStyle="#38bdf8"; ctx.beginPath(); ctx.arc(px,carY,5,0,7); ctx.fill();
-      // 接收波形（车顶小图）：往返压缩2次
-      drawWave(ctx,carX,carY+70,150,34,v*2,"#4ade80","回波：Δf = 2v/c·f₀（双程）");
     }
     if(mode==="spoof"||mode==="both"){
       const dy0=atkY-30, span=atkY-30-carY;
       const tt=t*spd%Math.abs(span);
       emit(atkX,atkY-14,"#f87171",Math.abs(span)+30,.8);
       ctx.fillStyle="#f87171"; ctx.beginPath(); ctx.arc(atkX,atkY-14-tt,5,0,7); ctx.fill();
-      drawWave(ctx,atkX,carY+70+ (mode==="both"?46:0),150,34,v,"#f87171","欺骗信号：Δf = v/c·f₀（单程）");
     }
-    function drawWave(c,x,y,w,h,shiftV,color,label){
-      c.strokeStyle="#243247"; c.strokeRect(x-w/2,y-8,w,h+14);
-      // 基准波形（未偏移）灰
-      c.strokeStyle="#334155"; c.beginPath();
-      for(let i=0;i<=w;i++){const f=8; c[i?"lineTo":"moveTo"](x-w/2+i, y+h/2-6*Math.sin(i/w*f*2*Math.PI));}
+    function drawWave(c,x,top,w,h,shiftV,color,label,alpha){
+      c.save();c.globalAlpha=alpha;
+      c.strokeStyle="#243247";c.strokeRect(x-w/2,top,w,h);
+      c.strokeStyle="#334155";c.beginPath();               // 基准波形（未偏移）
+      for(let i=0;i<=w;i++){c[i?"lineTo":"moveTo"](x-w/2+i,top+h*0.34-6*Math.sin(i/w*8*2*Math.PI));}
       c.stroke();
-      // 偏移后波形（密度 ∝ v）
-      const f2=8+shiftV*0.55;
-      c.strokeStyle=color; c.lineWidth=1.8; c.beginPath();
-      for(let i=0;i<=w;i++){c[i?"lineTo":"moveTo"](x-w/2+i, y+h/2+9-5*Math.sin(i/w*f2*2*Math.PI));}
-      c.stroke(); c.lineWidth=1;
-      c.fillStyle=color; c.font="11.5px sans-serif"; c.textAlign="center";
-      c.fillText(label,x,y+h+22);
+      const f2=8+shiftV*0.55;                              // 偏移后波形（密度∝v）
+      c.strokeStyle=color;c.lineWidth=1.8;c.beginPath();
+      for(let i=0;i<=w;i++){c[i?"lineTo":"moveTo"](x-w/2+i,top+h*0.74-5*Math.sin(i/w*f2*2*Math.PI));}
+      c.stroke();c.lineWidth=1;
+      c.fillStyle=color;c.font="11px sans-serif";c.textAlign="center";
+      c.fillText(label,x,top+13);                          // 标签画在框内顶部
+      c.restore();
     }
+    // 底部并排波形区（任何模式都可见，非激活淡化）
+    const waveW=Math.min(170,W*0.40), waveTop=H-58, half=Math.max(95,waveW/2+14);
+    drawWave(ctx,W*0.5-half,waveTop,waveW,42,v*2,"#4ade80","回波 Δf = 2v/c·f₀（双程）",
+             (mode==="legit"||mode==="both")?1:0.25);
+    drawWave(ctx,W*0.5+half,waveTop,waveW,42,v,"#f87171","欺骗信号 Δf = v/c·f₀（单程）",
+             (mode==="spoof"||mode==="both")?1:0.25);
     requestAnimationFrame(draw);
   };
   $("btnLegit").onclick=()=>{mode="legit";t0=performance.now()};
