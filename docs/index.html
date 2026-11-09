@@ -98,7 +98,7 @@ footer a{color:var(--accent);text-decoration:none}
 <!-- ================= 2. 攻击注入 ================= -->
 <section id="s2">
   <h2>② 攻击注入与多普勒实时演示（车 / 攻击者均可拖动）</h2>
-  <p class="desc">默认<b>匀速巡航</b>：自车沿固定方向稳速前进（场景无缝滚动，不弹跳不转向）；<b>拖动红色攻击器</b>可给它速度（松手后逐渐减速停下），也可拖动自车改变位置。右侧面板实时显示沿"车→攻击者"方向的径向相对速度与多普勒频移：合法回波（往返）应为欺骗信号（单程）的 <b>2 倍</b>；LiDAR 若把单程信号按往返解读，测得速度会被低估一半——这正是第③节检测的物理依据。d<sub>spoof</sub> 滑杆控制假点距离。</p>
+  <p class="desc"><b>道路固定不动</b>，你只动车：自车沿路匀速行驶，驶出上边后从下边绕回；<b>拖动红色攻击器</b>可给它速度（松手后逐渐减速停下），也可拖动自车改变位置。右侧面板实时显示沿"车→攻击者"方向的径向相对速度与多普勒频移：合法回波（往返）应为欺骗信号（单程）的 <b>2 倍</b>；LiDAR 若把单程信号按往返解读，测得速度会被低估一半——这正是第③节检测的物理依据。d<sub>spoof</sub> 滑杆控制假点距离。</p>
   <div class="card">
     <div class="controls">
       <label><input type="checkbox" id="cruise2" checked> 匀速巡航（车沿固定方向稳速前进，不弹跳）</label>
@@ -397,9 +397,9 @@ const C=3e8, LAMBDA=905e-9, K=47.75, N=256;
   // ---- 视图：相机跟车 ----
   let VW=800,VH=560,SC=12,OX=0,OY=0;
   function view(){const r=cv.getBoundingClientRect();VW=r.width;VH=+cv.dataset.h;
-    SC=Math.min(VW/52,VH/60);OX=VW/2;OY=VH*0.74}
-  const scrOf=e=>[OX+(e.x-st.car.x)*SC,OY-(e.y-st.car.y)*SC];
-  const worldOf=(px,py)=>[st.car.x+(px-OX)/SC,st.car.y-(OY-py)/SC*-1];
+    SC=Math.min(VW/54,(VH-36)/60);OX=VW/2;OY=VH-18}   // 道路固定：世界 y∈[0,60] 全景常驻
+  const scrOf=e=>[OX+e.x*SC,OY-e.y*SC];
+  const worldOf=(px,py)=>[(px-OX)/SC,(OY-py)/SC];
   // ---- 主循环 ----
   let last=performance.now();
   const draw=()=>{
@@ -414,30 +414,31 @@ const C=3e8, LAMBDA=905e-9, K=47.75, N=256;
         st.car.x+=st.vCar.x*dt;st.car.y+=st.vCar.y*dt; // 自由模式
         if(st.car.x<-WX+1.5||st.car.x>WX-1.5){st.car.x=Math.max(-WX+1.5,Math.min(WX-1.5,st.car.x));st.vCar.x*=-1}
       }
+      if(st.car.y>60){st.car.y-=60}                     // 驶出上边 → 从下边绕回（道路/攻击器不动）
+      if(st.car.y<0){st.car.y+=60}
       if(!dragging("atk")){
         st.atk.x+=st.vAtk.x*dt;st.atk.y+=st.vAtk.y*dt;
         const dec=Math.pow(0.5,dt/1.1);st.vAtk.x*=dec;st.vAtk.y*=dec;   // 松手后逐渐减速
         if(st.atk.x<-WX+1.5){st.atk.x=-WX+1.5;st.vAtk.x=Math.abs(st.vAtk.x)}
         if(st.atk.x> WX-1.5){st.atk.x= WX-1.5;st.vAtk.x=-Math.abs(st.vAtk.x)}
+        st.atk.y=Math.max(1,Math.min(59,st.atk.y));
       }
-      if(st.car.y>P*1000){st.car.y-=P*1000;st.atk.y-=P*1000}            // 数值回卷
     }
-    // 距离环
+    const [ccx,ccy]=scrOf(st.car);                     // 车的屏幕坐标（道路不动，车动）
     ctx.setLineDash([5,5]);ctx.strokeStyle="#243247";
-    for(let r=10;r<=40;r+=10){ctx.beginPath();ctx.arc(OX,OY,r*SC,0,7);ctx.stroke();
+    for(let r=10;r<=40;r+=10){ctx.beginPath();ctx.arc(ccx,ccy,r*SC,0,7);ctx.stroke();
       ctx.fillStyle="#64748b";ctx.font="10.5px sans-serif";ctx.textAlign="center";
-      ctx.fillText(r+" m",OX+r*SC*Math.cos(2.3),OY-r*SC*Math.sin(2.3));}
+      ctx.fillText(r+" m",ccx+r*SC*Math.cos(2.3),ccy-r*SC*Math.sin(2.3));}
     ctx.setLineDash([]);
     // 侧墙（无限长竖线）
     for(const wx of [-WX,WX]){const p=scrOf({x:wx,y:st.car.y});
       ctx.strokeStyle="#94a3b8";ctx.lineWidth=3.5;
       ctx.beginPath();ctx.moveTo(p[0],0);ctx.lineTo(p[0],H);ctx.stroke();}
-    // 周期障碍块
-    {const [k0,k1]=kRange(st.car.y);
-     for(const b of blocks)for(let k=k0;k<=k1;k++){
-       ctx.strokeStyle="#94a3b8";ctx.lineWidth=3.5;ctx.lineCap="round";
-       const a=scrOf({x:b.x0,y:b.y0+k*P}),c=scrOf({x:b.x1,y:b.y0+b.h+k*P});
-       ctx.strokeRect(Math.min(a[0],c[0]),Math.min(a[1],c[1]),Math.abs(c[0]-a[0]),Math.abs(c[1]-a[1]));}}
+    // 障碍块（固定于道路）
+    for(const b of blocks){
+      ctx.strokeStyle="#94a3b8";ctx.lineWidth=3.5;
+      const a=scrOf({x:b.x0,y:b.y0}),c=scrOf({x:b.x1,y:b.y0+b.h});
+      ctx.strokeRect(Math.min(a[0],c[0]),Math.min(a[1],c[1]),Math.abs(c[0]-a[0]),Math.abs(c[1]-a[1]));}
     // 攻击方向/注入参数
     const inj=$("inj2").checked,dsp=+$("dspSl2").value;$("dsp2").textContent=dsp;
     const dxA=st.atk.x-st.car.x,dyA=st.atk.y-st.car.y,distA=Math.hypot(dxA,dyA)||1;
@@ -453,9 +454,9 @@ const C=3e8, LAMBDA=905e-9, K=47.75, N=256;
       if(inj&&Math.abs(Math.atan2(Math.sin(th-dirA),Math.cos(th-dirA)))<=3.2*Math.PI/180){spf=true;d=Math.min(dsp,distA+40)}
       if(!isFinite(d))continue;
       const dm=d+rngL()*0.06;
-      const px=OX+lx*dm*SC,py=OY-ly*dm*SC;
+      const px=ccx+lx*dm*SC,py=ccy-ly*dm*SC;
       if(deg%2===0){ctx.strokeStyle="rgba(56,189,248,.09)";ctx.lineWidth=.6;
-        ctx.beginPath();ctx.moveTo(OX,OY);ctx.lineTo(px,py);ctx.stroke();}
+        ctx.beginPath();ctx.moveTo(ccx,ccy);ctx.lineTo(px,py);ctx.stroke();}
       if(spf){ctx.strokeStyle="#f87171";ctx.lineWidth=2;const z=6;
         ctx.beginPath();ctx.moveTo(px-z,py-z);ctx.lineTo(px+z,py+z);ctx.moveTo(px+z,py-z);ctx.lineTo(px-z,py+z);ctx.stroke();}
       else{ctx.fillStyle="#4ade80";ctx.beginPath();ctx.arc(px,py,2.1,0,7);ctx.fill();}
@@ -463,8 +464,8 @@ const C=3e8, LAMBDA=905e-9, K=47.75, N=256;
     // 注入扇形
     if(inj){ctx.fillStyle="rgba(248,113,113,.30)";ctx.strokeStyle="#fecaca";ctx.setLineDash([4,4]);ctx.lineWidth=1.2;
       const R=Math.max(8,dsp),r0=Math.min(3,R-2);
-      ctx.beginPath();ctx.arc(OX,OY,R*SC,dirA-3.2*Math.PI/180,dirA+3.2*Math.PI/180);
-      ctx.arc(OX,OY,r0*SC,dirA+3.2*Math.PI/180,dirA-3.2*Math.PI/180,true);ctx.closePath();
+      ctx.beginPath();ctx.arc(ccx,ccy,R*SC,dirA-3.2*Math.PI/180,dirA+3.2*Math.PI/180);
+      ctx.arc(ccx,ccy,r0*SC,dirA+3.2*Math.PI/180,dirA-3.2*Math.PI/180,true);ctx.closePath();
       ctx.fill();ctx.stroke();ctx.setLineDash([]);}
     // 攻击器
     {const [ax,ay]=scrOf(st.atk);
@@ -475,13 +476,13 @@ const C=3e8, LAMBDA=905e-9, K=47.75, N=256;
       ctx.fillText("攻击器（拖我）",ax,ay+26);}
     // 自车
     {ctx.fillStyle="#f8fafc";ctx.strokeStyle="#fbbf24";ctx.lineWidth=2.2;
-      ctx.beginPath();ctx.roundRect(OX-9,OY-16,18,32,4);ctx.fill();ctx.stroke();
-      ctx.fillStyle="#0b1220";ctx.beginPath();ctx.arc(OX,OY+4,4.4,0,7);ctx.fill();
-      ctx.strokeStyle="#fbbf24";ctx.beginPath();ctx.arc(OX,OY+4,6.2,0,7);ctx.stroke();
+      ctx.beginPath();ctx.roundRect(ccx-9,ccy-16,18,32,4);ctx.fill();ctx.stroke();
+      ctx.fillStyle="#0b1220";ctx.beginPath();ctx.arc(ccx,ccy+4,4.4,0,7);ctx.fill();
+      ctx.strokeStyle="#fbbf24";ctx.beginPath();ctx.arc(ccx,ccy+4,6.2,0,7);ctx.stroke();
       const vc=st.cruise?{x:0,y:st.cruiseV}:st.vCar;
-      arrow(ctx,OX,OY-20,vc.x,-vc.y,"#fbbf24");
+      arrow(ctx,ccx,ccy-20,vc.x,-vc.y,"#fbbf24");
       ctx.fillStyle="#fbbf24";ctx.font="12px sans-serif";ctx.textAlign="center";
-      ctx.fillText("自车（拖我改位置）",OX,OY+42);}
+      ctx.fillText("自车（拖我改位置）",ccx,ccy+42);}
     // ---- 读数 ----
     const l=[dxA/distA,dyA/distA];
     const vCx=st.cruise?0:st.vCar.x, vCy=st.cruise?st.cruiseV:st.vCar.y;
