@@ -162,7 +162,7 @@ def _panel_virtual_interferometer(ax):
                 "两路复指数光场\n$Y_{LO},Y_M$\n（§IV-B1）")
     _device_box(ax, 51, 88, 20, 12, "虚拟固定镜 M0",
                 "本振相位 $\\phi_{LO}$（随机常数）")
-    _device_box(ax, 51, 44, 21, 17, "虚拟动镜 M1",
+    _device_box(ax, 51, 43, 21, 20, "虚拟动镜 M1",
                 "相位积分 $2\\pi\\frac{2}{\\lambda}\\int v\\,dt$\n"
                 "电机滑轨 = 速度曲线 v(t)\n（含抖动，可时变）")
     _device_box(ax, 74, 66, 21, 26, "虚拟光电接收器",
@@ -178,9 +178,9 @@ def _panel_virtual_interferometer(ax):
     _arrow(ax, 18.5, 66, 22.5, 66, lw=2)
     ax.text(20.5, 71.5, "光束", fontsize=11.5, ha="center")
     _arrow(ax, 37.5, 69, 42, 84, color=C_HW_EDGE, lw=2)
-    _arrow(ax, 37.5, 63, 42, 51, color=C_HW_EDGE, lw=2)
+    _arrow(ax, 37.5, 63, 42, 54, color=C_HW_EDGE, lw=2)
     _arrow(ax, 61, 84, 66, 73, color=C_HW_EDGE, lw=2)
-    _arrow(ax, 61, 49, 66, 60, color=C_HW_EDGE, lw=2)
+    _arrow(ax, 61, 48, 66, 60, color=C_HW_EDGE, lw=2)
     ax.text(63.5, 68, "合束", fontsize=11.5, ha="center")
     _arrow(ax, 84.5, 66, 86, 66, lw=2)
     ax.text(85.3, 71, "电信号", fontsize=11.5, ha="center")
@@ -299,7 +299,7 @@ def _draw_virtual_scene(ax_scene):
                           bbox=dict(boxstyle="round,pad=0.3", fc=SC_BG,
                                     ec=color, lw=0.7, alpha=0.85))
 
-    note("自车 + 虚拟 2-D LiDAR\n1°×360°，0.1 s/帧", (0.9, 1.2), (-16.5, -6),
+    note("自车 + 虚拟 2-D LiDAR\n1°×360°，0.1 s/帧", (1.4, 1.9), (-16.5, -6),
          "#4ade80")
     note("虚拟攻击器\n（<60 美元三件套）",
          tuple(attacks["ahead"]["attacker"]), (6.2, 37), "#f87171")
@@ -394,7 +394,7 @@ def plot_panels(figdir):
     fig.tight_layout()
     _save_fig(fig, f"{figdir}/fig_map_attack.png")
 
-    fig, ax = plt.subplots(figsize=(10.8, 6.2))
+    fig, ax = plt.subplots(figsize=(10.8, 7.8))
     _panel_virtual_interferometer(ax)
     fig.tight_layout()
     _save_fig(fig, f"{figdir}/fig_virtual_interferometer.png")
