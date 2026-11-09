@@ -234,39 +234,82 @@ def summarize(results):
 
 
 def plot_closed_loop(results, scans, out_path, scan_idx=10):
-    """检测前 vs 检测后 点云对比图（自车坐标系）。"""
+    """检测前 vs 检测后 点云对比图（自车坐标系，深色 LiDAR 显示器风格）。"""
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
+    from matplotlib.patches import Rectangle, Circle
+    import matplotlib.transforms as mtransforms
 
+    plt.rcParams["font.family"] = ["Noto Sans CJK SC", "DejaVu Sans"]
+    plt.rcParams["axes.unicode_minus"] = False
+
+    BG, GRID, LEGIT, BIKE, SPOOF = "#0b1220", "#243247", "#4ade80", "#60a5fa", "#f87171"
     ego_xy, frame = scans[scan_idx]
     rejected = {lb for lb, r in results.items() if r["reject"]}
-    panels = [("under attack (spoofed points injected)", False),
-              ("after T² detection (spoofed tracks removed)", True)]
-    fig, axes = plt.subplots(1, 2, figsize=(12, 5.5), sharex=True, sharey=True)
+    panels = [("Under attack（欺骗点已注入）", False),
+              ("After T² detection（欺骗轨迹已滤除）", True)]
+    fig, axes = plt.subplots(1, 2, figsize=(13, 6.2), sharex=True, sharey=True)
     for ax, (title, filtered) in zip(axes, panels):
+        ax.set_facecolor(BG)
+        for r_ in (5, 10, 20, 30, 40):
+            ax.add_patch(plt.Circle(ego_xy, r_, fill=False, ec=GRID, lw=0.8,
+                                    ls="--"))
+        ax.axhline(ego_xy[1], color=GRID, lw=0.6)
+        ax.axvline(ego_xy[0], color=GRID, lw=0.6)
         for deg, (d, label, spf, _) in frame.items():
             if filtered and label in rejected:
                 continue
             th = np.deg2rad(deg)
-            x, y = ego_xy[0] + d * np.cos(th), ego_xy[1] + d * np.sin(th)
+            x = ego_xy[0] + d * np.cos(th)
+            y = ego_xy[1] + d * np.sin(th)
             if spf:
-                ax.plot(x, y, "rx", ms=7, mew=2)
+                ax.plot(x, y, "x", color=SPOOF, ms=8, mew=2)
             elif label == "bike":
-                ax.plot(x, y, "b^", ms=6)
+                ax.plot(x, y, "^", color=BIKE, ms=7)
             else:
-                ax.plot(x, y, "k.", ms=5)
-        ax.plot(ego_xy[0], ego_xy[1], "gs", ms=10, label="ego")
-        ax.set_title(title)
-        ax.set_xlabel("x (m)")
+                ax.plot(x, y, "o", color=LEGIT, ms=3.4,
+                        markeredgecolor="none")
+        if filtered:
+            miss_xy = (ego_xy[0] + 9.0, ego_xy[1])
+            ax.annotate("残留欺骗点 = 侧方假目标\n（论文局限1：相对速度≈0，未检出）",
+                        xy=miss_xy, xytext=(ego_xy[0] + 12, ego_xy[1] - 14),
+                        fontsize=10, color="#fca5a5", zorder=9,
+                        arrowprops=dict(arrowstyle="->", color="#fca5a5",
+                                        lw=1.3),
+                        bbox=dict(boxstyle="round,pad=0.3", fc="#0b1220",
+                                  ec="#f87171", lw=0.7, alpha=0.85))
+        tr = (mtransforms.Affine2D().rotate_deg(0).translate(*ego_xy)
+              + ax.transData)
+        ax.add_patch(Rectangle((ego_xy[0] - 1.0, ego_xy[1] - 1.8), 2.0, 3.6,
+                               fc="#166534", ec=LEGIT, lw=2, transform=tr,
+                               zorder=6))
+        ax.add_patch(Circle((ego_xy[0], ego_xy[1] + 0.5), 0.5, fc="#bbf7d0",
+                            ec="#052e16", lw=1.4, zorder=7))
+        ax.set_title(title, fontsize=12.5)
+        ax.set_xlabel("x (m)", fontsize=10.5)
         ax.set_aspect("equal")
-        ax.grid(alpha=0.3)
-    axes[0].set_ylabel("y (m)")
-    axes[0].legend(["spoofed", "bike (legit, moving)", "legit static", "ego"],
-                   fontsize=8, loc="upper left")
-    fig.suptitle(f"Closed-loop simulation (scan #{scan_idx}): "
-                 "2-D LiDAR + Eq.(2) spoofing injection + Eq.(5)(6) Doppler "
-                 "+ Hotelling $T^2$ filtering")
+        ax.tick_params(colors="#94a3b8", labelsize=9)
+        for sp in ax.spines.values():
+            sp.set_color("#334155")
+    axes[0].set_ylabel("y (m)", fontsize=10.5)
+    handles = [
+        plt.Line2D([], [], marker="x", ls="", color=SPOOF, ms=9, mew=2,
+                   label="欺骗点（注入）"),
+        plt.Line2D([], [], marker="^", ls="", color=BIKE, ms=8,
+                   label="自行车（动态合法）"),
+        plt.Line2D([], [], marker="o", ls="", color=LEGIT, ms=6,
+                   label="合法静态点云"),
+        plt.Line2D([], [], marker="s", ls="", color="#4ade80", ms=10,
+                   markeredgecolor="#052e16", markeredgewidth=1.5,
+                   label="自车 + LiDAR"),
+    ]
+    axes[0].legend(handles=handles, fontsize=9.5, loc="upper left",
+                   facecolor="#0f172a", edgecolor="#334155",
+                   labelcolor="#e2e8f0")
+    fig.suptitle(f"闭环仿真（第 {scan_idx} 帧）：2-D LiDAR + 式(2)欺骗注入 + "
+                 "式(5)(6)多普勒 + Hotelling T² 滤除", fontsize=14,
+                 weight="bold")
     fig.tight_layout()
-    fig.savefig(out_path, dpi=150)
+    fig.savefig(out_path, dpi=160, bbox_inches="tight")
     plt.close(fig)
