@@ -97,27 +97,43 @@ footer a{color:var(--accent);text-decoration:none}
 
 <!-- ================= 2. 攻击注入 ================= -->
 <section id="s2">
-  <h2>② 攻击注入：ToF 谎报与点云伪造</h2>
-  <p class="desc">俯视场景：白色自车以 11 m/s 前行，360° LiDAR 每帧输出点云。攻击者（红）在指定角窗口注入带时延 τ<sub>spoof</sub> 的激光脉冲，"先到先得"替换真实回波 → 点云出现假点。勾选三类攻击模型观察注入效果；红色扇形为注入角窗口。</p>
+  <h2>② 攻击注入与多普勒实时演示（车 / 攻击者均可拖动）</h2>
+  <p class="desc">直接<b>拖动白色自车或红色攻击器</b>——速度由拖动方向与快慢决定，松手后按当前速度继续行驶（撞墙反弹）。右侧面板实时显示沿"车→攻击者"方向的径向相对速度与多普勒频移：合法回波（往返）应为欺骗信号（单程）的 <b>2 倍</b>；LiDAR 若把单程信号按往返解读，测得速度会被低估一半——这正是第③节检测的物理依据。d<sub>spoof</sub> 滑杆控制假点距离。</p>
   <div class="card">
     <div class="controls">
-      <label><input type="checkbox" id="atkS" checked> 场景1：假静态墙（静态攻击者）</label>
-      <label><input type="checkbox" id="atkA" checked> 场景3：前方恒距假车</label>
-      <label><input type="checkbox" id="atkB"> 局限1：侧方同速假目标（相对速度≈0）</label>
-      <label>假点距离 d<sub>spoof</sub> = <span id="dsp">12</span> m
-        <input type="range" id="dspSl" min="4" max="30" value="12" style="width:120px"></label>
+      <label><input type="checkbox" id="inj2" checked> 注入欺骗点（式2）</label>
+      <label>d<sub>spoof</sub> = <span id="dsp2">12</span> m
+        <input type="range" id="dspSl2" min="4" max="40" value="12" style="width:130px"></label>
+      <button id="pause2" class="ghost">暂停</button>
+      <button id="reset2" class="ghost">重置</button>
     </div>
     <div class="row">
-      <div class="col"><canvas id="cv2" height="430"></canvas></div>
+      <div class="col" style="flex:2 1 520px">
+        <canvas id="cv2" height="560"></canvas>
+        <div class="legend">
+          <span><i style="background:var(--green)"></i>合法点云</span>
+          <span><i style="background:var(--red)"></i>欺骗点（红×）</span>
+          <span><i style="background:#f8fafc"></i>自车（可拖）</span>
+          <span><i style="background:#7f1d1d"></i>攻击器（可拖）</span>
+          <span><i style="background:rgba(248,113,113,.4)"></i>注入角窗口</span>
+        </div>
+      </div>
+      <div class="col" style="flex:1 1 250px">
+        <div class="card" style="background:var(--panel2);height:100%">
+          <div style="font-weight:700;margin-bottom:8px;color:var(--accent)">实时多普勒读数</div>
+          <div class="kv" style="flex-direction:column;align-items:stretch;gap:8px">
+            <div>自车速度 |v<sub>L</sub>| = <b id="vL2">0.0</b> m/s</div>
+            <div>攻击者速度 |v<sub>a</sub>| = <b id="vA2">0.0</b> m/s</div>
+            <div>径向相对速度 v<sub>r</sub> = <b id="vr2">0.00</b> m/s</div>
+            <div>Δf<sub>合法</sub>（往返, 式5）= <b id="dfL2">0.00</b> MHz</div>
+            <div>Δf<sub>欺骗</sub>（单程, 式6）= <b id="dfS2">0.00</b> MHz</div>
+            <div>比值 = <b id="ratio2">—</b>（应≈2）</div>
+            <div>LiDAR 误读速度 v̂ = <b id="vhat2">0.00</b> m/s（= v<sub>r</sub>/2）</div>
+          </div>
+          <p class="note" style="margin-top:10px">提示：把攻击器拖到自车正前方同向同速（v<sub>r</sub>→0），两个频移都趋于 0——即论文 §VII-D 的局限 1（低相对速度不可检）。λ = 905 nm。</p>
+        </div>
+      </div>
     </div>
-    <div class="legend">
-      <span><i style="background:var(--green)"></i>合法点云</span>
-      <span><i style="background:var(--blue)"></i>动态目标（自行车）</span>
-      <span><i style="background:var(--red)"></i>欺骗点（红×）</span>
-      <span><i style="background:#f8fafc"></i>自车</span>
-      <span><i style="background:rgba(248,113,113,.35)"></i>注入角窗口</span>
-    </div>
-    <p class="note">灰色粗线为场景物体（墙体/立柱/自行车）；青色为扫描光束。拖动 d<sub>spoof</sub> 滑杆可见假车在光束方向"凭空出现/移动"。</p>
   </div>
 </section>
 
@@ -319,103 +335,148 @@ const C=3e8, LAMBDA=905e-9, K=47.75, N=256;
   draw();
 })();
 
-/* ================= ② 场景点云 ================= */
+/* ================= ② 场景点云（可拖动 + 实时多普勒） ================= */
 (()=>{
   const cv=$("cv2");
-  // 场景（与 src/simulator.py 一致）
-  const segs=[
-    {x1:-12,y1:60,x2:12,y2:60,label:"front"},
-    {x1:-12,y1:-2,x2:-12,y2:60,label:"left"},
-    {x1:12,y1:-2,x2:12,y2:60,label:"right"},
-    {x1:-0.3,y1:19.5,x2:0.3,y2:20.5,label:"pillar"},
-    {x1:2.3,y1:24.7,x2:2.7,y2:25.3,label:"bike"},
+  const W2={x0:-26,x1:26,y0:-8,y1:92};           // 世界范围（大场景）
+  const segs=[                                    // 墙 + 两个障碍块
+    {x1:-24,y1:-8,x2:-24,y2:92},{x1:24,y1:-8,x2:24,y2:92},{x1:-24,y1:92,x2:24,y2:92},
+    {x1:-12,y1:34,x2:-8,y2:34},{x1:-8,y1:34,x2:-8,y2:40},{x1:-8,y1:40,x2:-12,y2:40},{x1:-12,y1:40,x2:-12,y2:34},
+    {x1:9,y1:52,x2:14,y2:52},{x1:14,y1:52,x2:14,y2:58},{x1:14,y1:58,x2:9,y2:58},{x1:9,y1:58,x2:9,y2:52},
   ];
+  const DEF={car:{x:0,y:10,vx:0,vy:11},atk:{x:6,y:34,vx:0,vy:0}};
+  const st={car:{...DEF.car},atk:{...DEF.atk},paused:false,drag:null,frame:0};
+  window.__sim=st;   // 调试/程序化演示钩子
   const ray=(px,py,dx,dy,s)=>{
-    const ex=s.x2-s.x1, ey=s.y2-s.y1, den=dx*ey-dy*ex;
+    const ex=s.x2-s.x1,ey=s.y2-s.y1,den=dx*ey-dy*ex;
     if(Math.abs(den)<1e-12)return Infinity;
-    const t=((s.x1-px)*ey-(s.y1-py)*ex)/den, u=((s.x1-px)*dy-(s.y1-py)*dx)/den;
+    const t=((s.x1-px)*ey-(s.y1-py)*ex)/den,u=((s.x1-px)*dy-(s.y1-py)*dx)/den;
     return (t>1e-6&&u>=-1e-9&&u<=1+1e-9)?t:Infinity;
   };
-  let egoY=0, frame=0;
+  const clampV=e=>{const m=Math.hypot(e.vx,e.vy);if(m>28){e.vx*=28/m;e.vy*=28/m}};
+  const bounce=e=>{const r=2;
+    if(e.x<W2.x0+r){e.x=W2.x0+r;e.vx=Math.abs(e.vx)}
+    if(e.x>W2.x1-r){e.x=W2.x1-r;e.vx=-Math.abs(e.vx)}
+    if(e.y<W2.y0+r){e.y=W2.y0+r;e.vy=Math.abs(e.vy)}
+    if(e.y>W2.y1-r){e.y=W2.y1-r;e.vy=-Math.abs(e.vy)}};
+  let last=performance.now();
+  // ---- 指针拖动 ----
+  const ptr=e=>{const r=cv.getBoundingClientRect();return [e.clientX-r.left,e.clientY-r.top]};
+  cv.style.touchAction="none";
+  cv.addEventListener("pointerdown",e=>{
+    const [px,py]=ptr(e);
+    const [cx,cy]=scrOf(st.car),[ax2,ay2]=scrOf(st.atk);
+    const dc=Math.hypot(px-cx,py-cy),da=Math.hypot(px-ax2,py-ay2);
+    st.drag={who:(da<dc&&da<34)?"atk":((dc<34)?"car":null),lx:null,ly:null,lt:0};
+    if(st.drag.who){st[st.drag.who].vx=0;st[st.drag.who].vy=0;cv.setPointerCapture(e.pointerId)}
+  });
+  cv.addEventListener("pointermove",e=>{
+    if(!st.drag||!st.drag.who)return;
+    const [px,py]=ptr(e),now=performance.now();
+    const w=worldOf(px,py),ent=st[st.drag.who];
+    if(st.drag.lx!==null){
+      const dt=Math.max(0.016,(now-st.drag.lt)/1000);
+      const nvx=(w[0]-st.drag.lx)/dt,nvy=(w[1]-st.drag.ly)/dt;
+      ent.vx=ent.vx*0.55+nvx*0.45; ent.vy=ent.vy*0.55+nvy*0.45; clampV(ent);
+    }
+    st.drag.lx=w[0];st.drag.ly=w[1];st.drag.lt=now;
+    ent.x=Math.max(W2.x0+2,Math.min(W2.x1-2,w[0]));
+    ent.y=Math.max(W2.y0+2,Math.min(W2.y1-2,w[1]));
+  });
+  const endDrag=()=>{st.drag=null};
+  cv.addEventListener("pointerup",endDrag);cv.addEventListener("pointercancel",endDrag);
+  // ---- 视图：跟随自车 ----
+  let VW=800,VH=560,SC=12,OX=0,OY=0;
+  function view(){const r=cv.getBoundingClientRect();VW=r.width;VH=+cv.dataset.h;
+    SC=Math.min(VW/50,VH/58);OX=VW/2;OY=VH*0.72}
+  const scrOf=e=>[OX+(e.x-st.car.x)*SC,OY-(e.y-st.car.y)*SC];
+  const worldOf=(px,py)=>[st.car.x+(px-OX)/SC,st.car.y-(py-OY)/SC];
+  // ---- 主循环 ----
   const draw=()=>{
-    const [ctx,W,H]=fitCanvas(cv); ctx.fillStyle="#0b1220"; ctx.fillRect(0,0,W,H);
-    const egoSpeed=11, T=0.1;
-    const ego={x:0,y:egoY};
-    const scale=Math.min(W/36,H/52), ox=W/2, oy=H-(ego.y*scale)-40;
-    const X=x=>ox+x*scale, Y=y=>oy-(y-ego.y)*scale*0 - (y*scale-oy) + 0; // 世界→屏幕（自车视角固定底部偏上）
-    const wx=x=>ox+x*scale, wy=y=>H-40-(y-ego.y)*scale;
-    // 距离环
-    ctx.setLineDash([5,5]); ctx.strokeStyle="#243247"; ctx.lineWidth=1;
-    for(const r of [10,20,30,40]){ctx.beginPath();ctx.arc(wx(0),wy(ego.y),r*scale,0,7);ctx.stroke();
+    const [ctx]=fitCanvas(cv);view();
+    const W=VW,H=VH;ctx.fillStyle="#0b1220";ctx.fillRect(0,0,W,H);
+    const now=performance.now(),dt=Math.min(0.05,(now-last)/1000);last=now;
+    if(!st.paused){for(const k of ["car","atk"]){const e=st[k];
+      if(!(st.drag&&st.drag.who===k)){e.x+=e.vx*dt;e.y+=e.vy*dt;bounce(e)}}}
+    // 距离环（以自车为心）
+    ctx.setLineDash([5,5]);ctx.strokeStyle="#243247";
+    for(let r=10;r<=40;r+=10){ctx.beginPath();ctx.arc(OX,OY,r*SC,0,7);ctx.stroke();
       ctx.fillStyle="#64748b";ctx.font="10.5px sans-serif";ctx.textAlign="center";
-      ctx.fillText(r+" m",wx(0)+r*scale*Math.cos(2.2),wy(ego.y)-r*scale*Math.sin(2.2));}
+      ctx.fillText(r+" m",OX+r*SC*Math.cos(2.3),OY-r*SC*Math.sin(2.3));}
     ctx.setLineDash([]);
-    // 物体线段
-    for(const s of segs){ctx.strokeStyle="#94a3b8";ctx.lineWidth=3.5;ctx.lineCap="round";
-      ctx.beginPath();ctx.moveTo(wx(s.x1),wy(s.y1));ctx.lineTo(wx(s.x2),wy(s.y2));ctx.stroke();}
-    // 攻击参数
-    const atkS=$("atkS").checked, atkA=$("atkA").checked, atkB=$("atkB").checked, dsp=+$("dspSl").value;
-    $("dsp").textContent=dsp;
-    const attacks=[];
-    if(atkS)attacks.push({dir:Math.atan2(30-ego.y,-2-0)+0,win:3*Math.PI/180,pos:[-2,30],label:"fake_static",staticWorld:true});
-    if(atkA)attacks.push({dir:Math.PI/2,win:2*Math.PI/180,label:"fake_ahead",dist:dsp});
-    if(atkB)attacks.push({dir:0,win:1*Math.PI/180,label:"fake_beside",dist:9});
-    // 扫描
-    const sweep=(frame*6)%360;
-    const rngL=mulberry32(7+frame);
+    // 物体
+    for(const s2 of segs){ctx.strokeStyle="#94a3b8";ctx.lineWidth=3.5;ctx.lineCap="round";
+      const a=scrOf({x:s2.x1,y:s2.y1}),b=scrOf({x:s2.x2,y:s2.y2});
+      ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke();}
+    // 攻击方向/参数
+    const inj=$("inj2").checked,dsp=+$("dspSl2").value;$("dsp2").textContent=dsp;
+    const dxA=st.atk.x-st.car.x,dyA=st.atk.y-st.car.y,distA=Math.hypot(dxA,dyA)||1;
+    const dirA=Math.atan2(dyA,dxA);
+    const rngL=mulberry32(99+(st.frame%7));
+    // 扫描 + 注入
+    const sweep=(st.frame*5)%360;
     for(let deg=0;deg<360;deg++){
-      const th=deg*Math.PI/180, l=[Math.cos(th),Math.sin(th)];
-      let d=Infinity,lab=null;
-      for(const s of segs){const dd=ray(0,ego.y,l[0],l[1],s);if(dd<d){d=dd;lab=s.label}}
-      let spf=false,vr=0;
-      for(const a of attacks){
-        let dir=a.dir, dist;
-        if(a.staticWorld){dir=Math.atan2(a.pos[1]-ego.y,a.pos[0]);dist=Math.hypot(a.pos[0],a.pos[1]-ego.y)}
-        else dist=a.dist;
-        let dd=Math.atan2(Math.sin(th-dir),Math.cos(th-dir));
-        if(Math.abs(dd)<=a.win){d=dist;spf=true;lab=a.label;vr=egoSpeed*Math.sin(th)}
-      }
+      const th=deg*Math.PI/180,lx=Math.cos(th),ly=Math.sin(th);
+      let d=Infinity;
+      for(const s3 of segs){const dd=ray(st.car.x,st.car.y,lx,ly,s3);if(dd<d)d=dd}
+      let spf=false;
+      if(inj&&Math.abs(Math.atan2(Math.sin(th-dirA),Math.cos(th-dirA)))<=3.2*Math.PI/180){spf=true;d=Math.min(dsp,distA+40)}
       if(!isFinite(d))continue;
       const dm=d+rngL()*0.06;
-      const px=wx(dm*l[0]),py=wy(ego.y+dm*l[1]);
-      // 光束（每2°）
-      if(deg%2===0){ctx.strokeStyle="rgba(56,189,248,.10)";ctx.lineWidth=.6;
-        ctx.beginPath();ctx.moveTo(wx(0),wy(ego.y));ctx.lineTo(px,py);ctx.stroke();}
-      // 扫描高亮
-      const sd=Math.abs(((deg-sweep+540)%360)-180);
-      if(sd<3&&!spf){ctx.strokeStyle="rgba(56,189,248,.8)";ctx.lineWidth=1.4;
-        ctx.beginPath();ctx.moveTo(wx(0),wy(ego.y));ctx.lineTo(px,py);ctx.stroke();}
-      if(spf){ctx.strokeStyle="#f87171";ctx.lineWidth=2;const s2=6;
-        ctx.beginPath();ctx.moveTo(px-s2,py-s2);ctx.lineTo(px+s2,py+s2);ctx.moveTo(px+s2,py-s2);ctx.lineTo(px-s2,py+s2);ctx.stroke();}
-      else if(lab==="bike"){ctx.fillStyle="#60a5fa";ctx.beginPath();ctx.arc(px,py,3.4,0,7);ctx.fill();}
+      const px=OX+lx*dm*SC,py=OY-ly*dm*SC;
+      if(deg%2===0){ctx.strokeStyle="rgba(56,189,248,.09)";ctx.lineWidth=.6;
+        ctx.beginPath();ctx.moveTo(OX,OY);ctx.lineTo(px,py);ctx.stroke();}
+      if(spf){ctx.strokeStyle="#f87171";ctx.lineWidth=2;const z=6;
+        ctx.beginPath();ctx.moveTo(px-z,py-z);ctx.lineTo(px+z,py+z);ctx.moveTo(px+z,py-z);ctx.lineTo(px-z,py+z);ctx.stroke();}
       else{ctx.fillStyle="#4ade80";ctx.beginPath();ctx.arc(px,py,2.1,0,7);ctx.fill();}
     }
-    // 注入窗口扇形
-    for(const a of attacks){
-      let dir=a.dir,R;
-      if(a.staticWorld){dir=Math.atan2(a.pos[1]-ego.y,a.pos[0]);R=Math.hypot(a.pos[0],a.pos[1]-ego.y)}
-      else R=a.dist;
-      ctx.fillStyle="rgba(248,113,113,.34)";ctx.strokeStyle="#fecaca";ctx.setLineDash([4,4]);ctx.lineWidth=1;
-      ctx.beginPath();ctx.moveTo(wx(0),wy(ego.y));
-      ctx.arc(wx(0),wy(ego.y),Math.min((R-2)*scale,44*scale),dir-a.win,dir+a.win);ctx.closePath();
-      ctx.fill();ctx.stroke();ctx.setLineDash([]);
-    }
-    // 攻击者
-    if(atkS||atkA){const ap=[6,20];ctx.fillStyle="#7f1d1d";ctx.strokeStyle="#f87171";ctx.lineWidth=2;
-      ctx.beginPath();ctx.roundRect(wx(ap[0])-7,wy(ap[1])-6,14,12,3);ctx.fill();ctx.stroke();
-      ctx.fillStyle="#f87171";ctx.font="11px sans-serif";ctx.textAlign="center";ctx.fillText("攻击器",wx(ap[0]),wy(ap[1])+20);}
-    // 自车（白底琥珀）
-    ctx.save();ctx.translate(wx(0),wy(ego.y));
-    ctx.fillStyle="#f8fafc";ctx.strokeStyle="#fbbf24";ctx.lineWidth=2.2;
-    ctx.beginPath();ctx.roundRect(-9,-16,18,32,4);ctx.fill();ctx.stroke();
-    ctx.fillStyle="#0b1220";ctx.beginPath();ctx.arc(0,4,4.4,0,7);ctx.fill();
-    ctx.strokeStyle="#fbbf24";ctx.beginPath();ctx.arc(0,4,6.2,0,7);ctx.stroke();
-    ctx.restore();
-    ctx.fillStyle="#fbbf24";ctx.font="12px sans-serif";ctx.textAlign="center";
-    ctx.fillText("自车 11 m/s",wx(0),wy(ego.y)+40);
-    frame++; egoY+=egoSpeed*T*0.22; if(egoY>30)egoY=0;
+    // 注入窗口扇形（环形，离车3m）
+    if(inj){ctx.fillStyle="rgba(248,113,113,.30)";ctx.strokeStyle="#fecaca";ctx.setLineDash([4,4]);ctx.lineWidth=1.2;
+      const R=Math.max(8,dsp),r0=Math.min(3,R-2);
+      ctx.beginPath();ctx.arc(OX,OY,R*SC,dirA-3.2*Math.PI/180,dirA+3.2*Math.PI/180);
+      ctx.arc(OX,OY,r0*SC,dirA+3.2*Math.PI/180,dirA-3.2*Math.PI/180,true);ctx.closePath();
+      ctx.fill();ctx.stroke();ctx.setLineDash([]);}
+    // 攻击器（红块 + 速度箭头 + 标签）
+    {const [ax,ay]=scrOf(st.atk);
+      ctx.fillStyle="#7f1d1d";ctx.strokeStyle="#f87171";ctx.lineWidth=2;
+      ctx.beginPath();ctx.roundRect(ax-9,ay-7,18,14,3);ctx.fill();ctx.stroke();
+      arrow(ctx,ax,ay,st.atk.vx,-st.atk.vy,"#f87171");
+      ctx.fillStyle="#f87171";ctx.font="11.5px sans-serif";ctx.textAlign="center";
+      ctx.fillText("攻击器（拖我）",ax,ay+26);}
+    // 自车
+    {ctx.fillStyle="#f8fafc";ctx.strokeStyle="#fbbf24";ctx.lineWidth=2.2;
+      ctx.beginPath();ctx.roundRect(OX-9,OY-16,18,32,4);ctx.fill();ctx.stroke();
+      ctx.fillStyle="#0b1220";ctx.beginPath();ctx.arc(OX,OY+4,4.4,0,7);ctx.fill();
+      ctx.strokeStyle="#fbbf24";ctx.beginPath();ctx.arc(OX,OY+4,6.2,0,7);ctx.stroke();
+      arrow(ctx,OX,OY-20,st.car.vx,-st.car.vy,"#fbbf24");
+      ctx.fillStyle="#fbbf24";ctx.font="12px sans-serif";ctx.textAlign="center";
+      ctx.fillText("自车（拖我）",OX,OY+42);}
+    // ---- 读数 ----
+    const l=[dxA/distA,dyA/distA];
+    const vr=(st.car.vx-st.atk.vx)*l[0]+(st.car.vy-st.atk.vy)*l[1];
+    const dfL=2*vr/LAMBDA,dfS=vr/LAMBDA;
+    $("vL2").textContent=Math.hypot(st.car.vx,st.car.vy).toFixed(1);
+    $("vA2").textContent=Math.hypot(st.atk.vx,st.atk.vy).toFixed(1);
+    $("vr2").textContent=vr.toFixed(2);
+    $("dfL2").textContent=(dfL/1e6).toFixed(2);
+    $("dfS2").textContent=(dfS/1e6).toFixed(2);
+    $("ratio2").textContent=Math.abs(vr)>0.05?(dfL/dfS).toFixed(2):"—";
+    $("vhat2").textContent=(vr/2).toFixed(2);
+    st.frame++;
     requestAnimationFrame(draw);
   };
+  function arrow(c,x,y,vx,vy,color){
+    const m=Math.hypot(vx,vy);if(m<0.4)return;
+    const L2=Math.min(46,10+m*2.4),ux=vx/m,uy=vy/m;
+    c.strokeStyle=color;c.fillStyle=color;c.lineWidth=2.4;
+    c.beginPath();c.moveTo(x,y);c.lineTo(x+ux*L2,y+uy*L2);c.stroke();
+    c.beginPath();c.moveTo(x+ux*L2,y+uy*L2);
+    c.lineTo(x+ux*L2-ux*7-uy*4.5,y+uy*L2-uy*7+ux*4.5);
+    c.lineTo(x+ux*L2-ux*7+uy*4.5,y+uy*L2-uy*7-ux*4.5);
+    c.closePath();c.fill();c.lineWidth=1;
+  }
+  $("pause2").onclick=()=>{st.paused=!st.paused;$("pause2").textContent=st.paused?"继续":"暂停"};
+  $("reset2").onclick=()=>{Object.assign(st.car,DEF.car);Object.assign(st.atk,DEF.atk);st.paused=false;$("pause2").textContent="暂停"};
   draw();
 })();
 
