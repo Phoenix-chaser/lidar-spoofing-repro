@@ -6,6 +6,10 @@
 > Autonomous Vehicles: A Physical-Layer Approach"*, **IEEE Internet of Things Journal**,
 > Vol. 11, No. 11, pp. 20673–20689, June 2024. DOI: [10.1109/JIOT.2024.3371378](https://doi.org/10.1109/JIOT.2024.3371378)
 
+## 🎮 在线交互演示
+
+**[点击打开 →](https://phoenix-chaser.github.io/lidar-spoofing-repro/)** 五个交互模块：① 2:1 多普勒签名动画（往返 vs 单程波形对比）、② 攻击注入与点云（三类攻击模型勾选 + d_spoof 滑杆 + 旋转扫描）、③ 逐帧检测判决（ToF/多普勒双测速散点 + t 统计量，含论文局限 1 的如实演示）、④ 协同 LiDAR（图 11 交互复现，同速盲区可视化）、⑤ 统计功效（图 13/14 蒙特卡洛实时计算）。纯前端无依赖，参数与仓库 `run_all.py` 一致；源码见 `docs/index.html`。
+
 **English summary** — This repository reproduces, in pure Python, every software-reproducible
 result of the paper — including both of its hardware experiments, each replaced by an
 equivalent simulation: (i) the Doppler-shift models (Eq. 3–6, 15); (ii) Proposition 1 (verified

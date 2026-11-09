@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LiDAR 欺骗攻击检测 · 交互演示</title>
+<style>
+:root{
+  --bg:#0b1220;--panel:#101a2e;--panel2:#0e1626;--line:#243247;
+  --txt:#e2e8f0;--sub:#94a3b8;--accent:#38bdf8;--green:#4ade80;
+  --red:#f87171;--amber:#fbbf24;--blue:#60a5fa;--pink:#fca5a5;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font-family:"Noto Sans CJK SC","Noto Sans SC","Microsoft YaHei",sans-serif;line-height:1.6}
+header{padding:28px 20px 14px;text-align:center;border-bottom:1px solid var(--line)}
+header h1{font-size:26px;letter-spacing:1px}
+header p{color:var(--sub);font-size:14px;margin-top:6px}
+header a{color:var(--accent);text-decoration:none}
+nav{position:sticky;top:0;background:rgba(11,18,32,.94);backdrop-filter:blur(6px);display:flex;gap:6px;justify-content:center;flex-wrap:wrap;padding:10px 12px;border-bottom:1px solid var(--line);z-index:9}
+nav a{color:var(--sub);text-decoration:none;font-size:13px;padding:5px 12px;border:1px solid var(--line);border-radius:16px}
+nav a:hover,nav a.on{color:var(--bg);background:var(--accent);border-color:var(--accent)}
+main{max-width:1080px;margin:0 auto;padding:10px 16px 60px}
+section{margin-top:34px}
+section > h2{font-size:20px;border-left:4px solid var(--accent);padding-left:10px;margin-bottom:4px}
+section > .desc{color:var(--sub);font-size:13.5px;margin:6px 0 12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
+.row{display:flex;flex-wrap:wrap;gap:14px;align-items:stretch}
+.col{flex:1 1 340px;min-width:300px}
+canvas{width:100%;display:block;border-radius:8px;background:var(--panel2)}
+.controls{display:flex;flex-wrap:wrap;gap:12px;margin:10px 0;align-items:center;font-size:13px}
+.controls label{color:var(--sub)}
+.controls button{background:var(--accent);color:#04121f;border:none;border-radius:8px;padding:6px 14px;font-size:13px;cursor:pointer;font-weight:600}
+.controls button.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+.controls button.off{opacity:.45}
+input[type=range]{vertical-align:middle;accent-color:var(--accent)}
+select{background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:6px;padding:4px 8px;font-size:13px}
+.badge{display:inline-block;padding:3px 12px;border-radius:14px;font-weight:700;font-size:14px}
+.badge.ok{background:rgba(74,222,128,.15);color:var(--green);border:1px solid var(--green)}
+.badge.bad{background:rgba(248,113,113,.15);color:var(--red);border:1px solid var(--red)}
+.badge.warn{background:rgba(251,191,36,.15);color:var(--amber);border:1px solid var(--amber)}
+.kv{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;font-size:13px}
+.kv div{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 12px}
+.kv b{color:var(--accent)}
+.note{font-size:12.5px;color:var(--sub);margin-top:8px}
+.eq{font-family:"Times New Roman",serif;font-size:15px;color:#cfe3ff}
+footer{border-top:1px solid var(--line);margin-top:50px;padding:18px;text-align:center;color:var(--sub);font-size:12.5px}
+footer a{color:var(--accent);text-decoration:none}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--sub);margin-top:6px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+</style>
+</head>
+<body>
+<header>
+  <h1>LiDAR 欺骗攻击检测 · 交互演示</h1>
+  <p>Spoofing Detection for LiDAR in Autonomous Vehicles: A Physical-Layer Approach —
+  Hu, Liu, Shu, Nguyen · <a href="https://ieeexplore.ieee.org/document/10453355" target="_blank">IEEE IoT-J 2024</a> ·
+  对应复现代码 <a href="https://github.com/Phoenix-chaser/lidar-spoofing-repro" target="_blank">lidar-spoofing-repro</a></p>
+</header>
+<nav>
+  <a href="#s1">① 2:1 多普勒签名</a>
+  <a href="#s2">② 攻击注入与点云</a>
+  <a href="#s3">③ 逐帧检测判决</a>
+  <a href="#s4">④ 协同 LiDAR</a>
+  <a href="#s5">⑤ 统计功效</a>
+</nav>
+<main>
+
+<!-- ================= 1. 多普勒签名 ================= -->
+<section id="s1">
+  <h2>① 核心原理：往返 vs 单程 → 多普勒频移 2:1</h2>
+  <p class="desc">合法回波经历<b>往返双程</b>（去程偏一次、回程再偏一次）；欺骗信号由攻击者<b>单程直发</b>，只偏一次。同一相对速度下，合法频移恰为欺骗的 2 倍（式 5/6）。播放动画对比两种信号的传播与频移。</p>
+  <div class="card">
+    <div class="controls">
+      <button id="btnLegit">播放合法回波（往返）</button>
+      <button id="btnSpoof">播放欺骗信号（单程）</button>
+      <button id="btnBoth" class="ghost">同屏对比</button>
+      <label>相对速度 v = <span id="vLab">10</span> m/s
+        <input type="range" id="vSl" min="1" max="20" value="10" style="width:130px"></label>
+      <label><input type="checkbox" id="slowMo" checked> 慢放（×10⁻⁷ 时间缩放）</label>
+    </div>
+    <div class="row">
+      <div class="col"><canvas id="cv1" height="330"></canvas></div>
+      <div class="col">
+        <div class="card" style="background:var(--panel2)">
+          <div class="eq">式(5) 合法（往返）：Δf ≈ <span class="eq">2v/c · f₀</span></div>
+          <div class="kv">
+            <div>合法频移 Δf<sub>legit</sub> = <b id="dfL">—</b> <span class="note">(λ=905nm)</span></div>
+            <div>欺骗频移 Δf<sub>spoof</sub> = <b id="dfS">—</b></div>
+            <div>比值 = <b id="dfR">—</b>（应≈2）</div>
+          </div>
+          <p class="note" style="margin-top:10px">动画里波形密度即频率：绿车发出的脉冲打到物体后反射回，接收波形被压缩两次（双程）；红色攻击者只发一程，压缩一次。LiDAR 若不验证发送者，就会把单程信号当作自己的回波——距离由攻击者的时延任意谎报（式 2）。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 2. 攻击注入 ================= -->
+<section id="s2">
+  <h2>② 攻击注入：ToF 谎报与点云伪造</h2>
+  <p class="desc">俯视场景：白色自车以 11 m/s 前行，360° LiDAR 每帧输出点云。攻击者（红）在指定角窗口注入带时延 τ<sub>spoof</sub> 的激光脉冲，"先到先得"替换真实回波 → 点云出现假点。勾选三类攻击模型观察注入效果；红色扇形为注入角窗口。</p>
+  <div class="card">
+    <div class="controls">
+      <label><input type="checkbox" id="atkS" checked> 场景1：假静态墙（静态攻击者）</label>
+      <label><input type="checkbox" id="atkA" checked> 场景3：前方恒距假车</label>
+      <label><input type="checkbox" id="atkB"> 局限1：侧方同速假目标（相对速度≈0）</label>
+      <label>假点距离 d<sub>spoof</sub> = <span id="dsp">12</span> m
+        <input type="range" id="dspSl" min="4" max="30" value="12" style="width:120px"></label>
+    </div>
+    <div class="row">
+      <div class="col"><canvas id="cv2" height="430"></canvas></div>
+    </div>
+    <div class="legend">
+      <span><i style="background:var(--green)"></i>合法点云</span>
+      <span><i style="background:var(--blue)"></i>动态目标（自行车）</span>
+      <span><i style="background:var(--red)"></i>欺骗点（红×）</span>
+      <span><i style="background:#f8fafc"></i>自车</span>
+      <span><i style="background:rgba(248,113,113,.35)"></i>注入角窗口</span>
+    </div>
+    <p class="note">灰色粗线为场景物体（墙体/立柱/自行车）；青色为扫描光束。拖动 d<sub>spoof</sub> 滑杆可见假车在光束方向"凭空出现/移动"。</p>
+  </div>
+</section>
+
+<!-- ================= 3. 检测判决 ================= -->
+<section id="s3">
+  <h2>③ 逐帧检测：ToF 速度 ≟ 多普勒速度</h2>
+  <p class="desc">对每个目标逐帧采集两种测速（式 8/9 用位置差分 = "尺子量"；式 5/6 用频移 = "耳朵听"），做均值一致性检验（式 17 t 检验；完整版为二维 T²，式 18/19）。真目标两种速度一致；欺骗点出现 2:1 失配被检出——除非相对速度≈0（论文 §VII-D 局限 1）。</p>
+  <div class="card">
+    <div class="controls">
+      <label>目标：<select id="tgt">
+        <option value="wall">前方墙（合法静态）</option>
+        <option value="bike">自行车（合法动态 v=1.2m/s）</option>
+        <option value="fakeS" selected>假静态墙（场景1·应检出）</option>
+        <option value="fakeA">前方假车（场景3·应检出）</option>
+        <option value="fakeB">侧方假目标（局限1·不可检）</option>
+      </select></label>
+      <button id="cap">采集一帧</button>
+      <button id="auto" class="ghost">自动采集</button>
+      <button id="reset" class="ghost">重置</button>
+      <span>样本 n = <b id="nLab">0</b></span>
+      <span class="badge" id="verdict" style="visibility:hidden">—</span>
+    </div>
+    <div class="row">
+      <div class="col"><canvas id="cv3a" height="300"></canvas>
+        <p class="note" style="text-align:center">v<sub>Dop</sub> vs v<sub>ToF</sub> 散点（虚线 y=x 为一致参考）</p></div>
+      <div class="col"><canvas id="cv3b" height="300"></canvas>
+        <p class="note" style="text-align:center">t 统计量 vs 临界值 t<sub>n-1</sub>(0.025)</p></div>
+    </div>
+    <div class="kv">
+      <div>v̄<sub>Dop</sub> = <b id="mD">—</b> m/s</div>
+      <div>v̄<sub>ToT</sub> = <b id="mT">—</b> m/s</div>
+      <div>均值差 = <b id="mDiff">—</b> m/s</div>
+      <div>t = <b id="tLab">—</b>，临界值 = <b id="cLab">—</b></div>
+    </div>
+    <p class="note">噪声参数与仓库复现一致：σ<sub>Dop</sub> 按式(28)（K=47.75, N=256, SNR=10⁻⁴），σ<sub>ToT</sub>=3%。判定规则：t 超过临界值 → 拒绝"一致" → 判为欺骗。</p>
+  </div>
+</section>
+
+<!-- ================= 4. 协同 LiDAR ================= -->
+<section id="s4">
+  <h2>④ 协同 LiDAR：一把钥匙开不了两把锁（图 11 复现）</h2>
+  <p class="desc">攻击者可按命题 1 定制速度骗过单台 LiDAR，但两台<b>不同速度</b>的 LiDAR 各自感知的多普勒速度必然对不上。调节两车速度：速度差为 0 时（图 11d）差异恒为 0——检测失效，这就是协同组必须异速的原因。</p>
+  <div class="card">
+    <div class="controls">
+      <label>|v<sub>ego</sub>| = <span id="veL">2.0</span> m/s <input type="range" id="veSl" min="0.5" max="6" step="0.1" value="2" style="width:110px"></label>
+      <label>|v<sub>coop</sub>| = <span id="vcL">3.0</span> m/s <input type="range" id="vcSl" min="0.5" max="6" step="0.1" value="3" style="width:110px"></label>
+      <label>攻击者方向 φ<sub>a</sub> = <span id="paL">90</span>° <input type="range" id="paSl" min="0" max="180" step="5" value="90" style="width:110px"></label>
+    </div>
+    <div class="row">
+      <div class="col"><canvas id="cv4" height="320"></canvas>
+        <p class="note" style="text-align:center">|v<sub>Dop</sub><sup>coop</sup>| − |v<sub>Dop</sub><sup>ego</sup>| 随攻击者速度 |v<sub>a</sub>| 的变化（θ=90°，攻击者在正前方）</p></div>
+    </div>
+    <div class="kv">
+      <div>当前 |v<sub>a</sub>| = <b id="vaCur">10</b> m/s 处差异 = <b id="diffCur">—</b> m/s</div>
+      <div id="coopNote" class="badge ok">两 LiDAR 异速 → 可检测</div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 5. 统计功效 ================= -->
+<section id="s5">
+  <h2>⑤ 统计功效：检测需要多少样本？（图 13/14 复现）</h2>
+  <p class="desc">欺骗比例 p 越低、SNR 越低，需要攒的样本越多。右侧用蒙特卡洛（与仓库 run_all.py 同参数）实时计算当前设置下达到功效 0.9 的最小样本量 n，并给出对应 F1。</p>
+  <div class="card">
+    <div class="controls">
+      <label>路况：<select id="road">
+        <option value="h">高速 v_rel=16.5 m/s</option>
+        <option value="r" selected>匝道 v_rel=10 m/s</option>
+        <option value="c">城区 v_rel=5.5 m/s</option>
+      </select></label>
+      <label>欺骗比例 p = <span id="pL">0.10</span> <input type="range" id="pSl" min="0.05" max="1" step="0.05" value="0.1" style="width:120px"></label>
+      <label>SNR = 10^<span id="snrL">-4</span> <input type="range" id="snrSl" min="-6" max="-4" step="1" value="-4" style="width:80px"></label>
+      <button id="recalc">重新计算</button>
+    </div>
+    <div class="row">
+      <div class="col"><canvas id="cv5" height="320"></canvas>
+        <p class="note" style="text-align:center">经验功效随样本量 n 的变化（虚线 = 目标 0.9，α=0.05）</p></div>
+    </div>
+    <div class="kv">
+      <div>最小样本量 n* = <b id="nStar">—</b></div>
+      <div>该点功效 = <b id="pwStar">—</b></div>
+      <div>F1 = 2(1−β)/(2(1−β)+α+β) = <b id="f1Lab">—</b></div>
+    </div>
+    <p class="note">说明：演示用一维 t 检验（式 17），故 n* 略高于论文的 50——论文与仓库用二维 Hotelling T²（式 18/19，K=47.75 锚点校准），城区 p=0.1、SNR=10⁻⁴ 时 n*=50、F1=0.923；p=0.4 时 F1≈0.97（§VI-F 锚点，仓库复现 0.924 / 0.976）。</p>
+  </div>
+</section>
+
+<footer>
+  本页为论文交互演示 · 所有数值与 <a href="https://github.com/Phoenix-chaser/lidar-spoofing-repro" target="_blank">lidar-spoofing-repro</a> 仓库复现参数一致（K=47.75 锚点校准）·
+  纯前端实现，可直接离线运行
+</footer>
+</main>
+
+<script>
+"use strict";
+/* ---------------- 通用 ---------------- */
+const $ = id => document.getElementById(id);
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+let rng = mulberry32(20260709);
+function gauss(){let u=0,v=0;while(u===0)u=rng();while(v===0)v=rng();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)}
+function fitCanvas(cv){
+  if(!cv.dataset.h)cv.dataset.h=cv.getAttribute("height");
+  const hCss=+cv.dataset.h,dpr=window.devicePixelRatio||1;
+  const wCss=Math.max(50,cv.getBoundingClientRect().width);
+  cv.style.height=hCss+"px";
+  cv.width=Math.round(wCss*dpr);cv.height=Math.round(hCss*dpr);
+  const ctx=cv.getContext("2d");ctx.setTransform(dpr,0,0,dpr,0,0);
+  return [ctx,wCss,hCss]}
+function tCrit(df){ // 双侧 t_{df}(0.025) 近似（足够演示精度）
+  const z=1.959964;
+  const g1=(z**3+z)/4,g2=(5*z**5+16*z**3+3*z)/96,g3=(3*z**7+19*z**5+17*z**3-15*z)/384;
+  const x=1/df;
+  return z+g1*x+g2*x*x+g3*x**3;
+}
+const C=3e8, LAMBDA=905e-9, K=47.75, N=256;
+
+/* ================= ① 多普勒动画 ================= */
+(()=>{
+  const cv=$("cv1"); let mode="legit", t0=performance.now();
+  const draw=()=>{
+    const [ctx,W,H]=fitCanvas(cv); ctx.clearRect(0,0,W,H);
+    const v=+$("vSl").value; $("vLab").textContent=v;
+    const dfL=2*v/LAMBDA, dfS=v/LAMBDA;
+    $("dfL").textContent=(dfL/1e6).toFixed(2)+" MHz"; $("dfS").textContent=(dfS/1e6).toFixed(2)+" MHz";
+    $("dfR").textContent=(dfL/dfS).toFixed(2);
+    const carX=W*0.10, carY=H*0.52, objX=W*0.82, atkX=W*0.55, atkY=H*0.86;
+    // 场景
+    ctx.fillStyle="#0e1626"; ctx.fillRect(0,0,W,H);
+    // 自车
+    ctx.fillStyle="#f8fafc"; ctx.strokeStyle="#fbbf24"; ctx.lineWidth=2.5;
+    ctx.beginPath(); ctx.roundRect(carX-16,carY-26,32,52,7); ctx.fill(); ctx.stroke();
+    ctx.fillStyle="#0b1220"; ctx.beginPath(); ctx.arc(carX,carY-8,6,0,7); ctx.fill();
+    ctx.strokeStyle="#fbbf24"; ctx.beginPath(); ctx.arc(carX,carY-8,8.5,0,7); ctx.stroke();
+    ctx.fillStyle="#fbbf24"; ctx.font="12px sans-serif"; ctx.textAlign="center";
+    ctx.fillText("自车 LiDAR",carX,carY+48);
+    ctx.fillText("v = "+v+" m/s →",carX,carY-42);
+    // 物体
+    ctx.fillStyle="#94a3b8"; ctx.fillRect(objX-10,objY_(),20,H*0.5);
+    function objY_(){return H*0.30}
+    ctx.fillStyle="#cbd5e1"; ctx.fillText("物体（静止）",objX,H*0.27);
+    // 攻击者
+    if(mode==="spoof"||mode==="both"){
+      ctx.fillStyle="#7f1d1d"; ctx.strokeStyle="#f87171"; ctx.lineWidth=2.5;
+      ctx.beginPath(); ctx.roundRect(atkX-15,atkY-12,30,26,6); ctx.fill(); ctx.stroke();
+      ctx.fillStyle="#f87171"; ctx.fillText("攻击者（单程直发）",atkX,atkY+30);
+    }
+    // 波前动画：慢放系数
+    const slow=$("slowMo").checked?0.16:1;
+    const t=((performance.now()-t0)/1000)*slow;
+    const spd=170; // px/s 视觉速度
+    const emit=(x,y,color,maxR,alpha)=>{
+      const n=3;
+      for(let i=0;i<n;i++){
+        const r=(t*spd-i*26)%maxR; if(r<0)continue;
+        ctx.strokeStyle=color; ctx.globalAlpha=alpha*(1-r/maxR); ctx.lineWidth=1.6;
+        ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.stroke();
+      }
+      ctx.globalAlpha=1;
+    };
+    const dist=(objX-carX);
+    if(mode==="legit"||mode==="both"){
+      // 往返：去程从车到物体（半圆右侧），回程从物体到车
+      const tGo=t*spd%(2*dist);
+      const goFwd = tGo<dist;
+      const px=goFwd? carX+tGo : objX-(tGo-dist);
+      // 波前
+      emit(goFwd?carX:objX, carY, "#38bdf8", dist, .8);
+      // 脉冲点
+      ctx.fillStyle="#38bdf8"; ctx.beginPath(); ctx.arc(px,carY,5,0,7); ctx.fill();
+      // 接收波形（车顶小图）：往返压缩2次
+      drawWave(ctx,carX,carY+70,150,34,v*2,"#4ade80","回波：Δf = 2v/c·f₀（双程）");
+    }
+    if(mode==="spoof"||mode==="both"){
+      const dy0=atkY-30, span=atkY-30-carY;
+      const tt=t*spd%Math.abs(span);
+      emit(atkX,atkY-14,"#f87171",Math.abs(span)+30,.8);
+      ctx.fillStyle="#f87171"; ctx.beginPath(); ctx.arc(atkX,atkY-14-tt,5,0,7); ctx.fill();
+      drawWave(ctx,atkX,carY+70+ (mode==="both"?46:0),150,34,v,"#f87171","欺骗信号：Δf = v/c·f₀（单程）");
+    }
+    function drawWave(c,x,y,w,h,shiftV,color,label){
+      c.strokeStyle="#243247"; c.strokeRect(x-w/2,y-8,w,h+14);
+      // 基准波形（未偏移）灰
+      c.strokeStyle="#334155"; c.beginPath();
+      for(let i=0;i<=w;i++){const f=8; c[i?"lineTo":"moveTo"](x-w/2+i, y+h/2-6*Math.sin(i/w*f*2*Math.PI));}
+      c.stroke();
+      // 偏移后波形（密度 ∝ v）
+      const f2=8+shiftV*0.55;
+      c.strokeStyle=color; c.lineWidth=1.8; c.beginPath();
+      for(let i=0;i<=w;i++){c[i?"lineTo":"moveTo"](x-w/2+i, y+h/2+9-5*Math.sin(i/w*f2*2*Math.PI));}
+      c.stroke(); c.lineWidth=1;
+      c.fillStyle=color; c.font="11.5px sans-serif"; c.textAlign="center";
+      c.fillText(label,x,y+h+22);
+    }
+    requestAnimationFrame(draw);
+  };
+  $("btnLegit").onclick=()=>{mode="legit";t0=performance.now()};
+  $("btnSpoof").onclick=()=>{mode="spoof";t0=performance.now()};
+  $("btnBoth").onclick=()=>{mode="both";t0=performance.now()};
+  draw();
+})();
+
+/* ================= ② 场景点云 ================= */
+(()=>{
+  const cv=$("cv2");
+  // 场景（与 src/simulator.py 一致）
+  const segs=[
+    {x1:-12,y1:60,x2:12,y2:60,label:"front"},
+    {x1:-12,y1:-2,x2:-12,y2:60,label:"left"},
+    {x1:12,y1:-2,x2:12,y2:60,label:"right"},
+    {x1:-0.3,y1:19.5,x2:0.3,y2:20.5,label:"pillar"},
+    {x1:2.3,y1:24.7,x2:2.7,y2:25.3,label:"bike"},
+  ];
+  const ray=(px,py,dx,dy,s)=>{
+    const ex=s.x2-s.x1, ey=s.y2-s.y1, den=dx*ey-dy*ex;
+    if(Math.abs(den)<1e-12)return Infinity;
+    const t=((s.x1-px)*ey-(s.y1-py)*ex)/den, u=((s.x1-px)*dy-(s.y1-py)*dx)/den;
+    return (t>1e-6&&u>=-1e-9&&u<=1+1e-9)?t:Infinity;
+  };
+  let egoY=0, frame=0;
+  const draw=()=>{
+    const [ctx,W,H]=fitCanvas(cv); ctx.fillStyle="#0b1220"; ctx.fillRect(0,0,W,H);
+    const egoSpeed=11, T=0.1;
+    const ego={x:0,y:egoY};
+    const scale=Math.min(W/36,H/52), ox=W/2, oy=H-(ego.y*scale)-40;
+    const X=x=>ox+x*scale, Y=y=>oy-(y-ego.y)*scale*0 - (y*scale-oy) + 0; // 世界→屏幕（自车视角固定底部偏上）
+    const wx=x=>ox+x*scale, wy=y=>H-40-(y-ego.y)*scale;
+    // 距离环
+    ctx.setLineDash([5,5]); ctx.strokeStyle="#243247"; ctx.lineWidth=1;
+    for(const r of [10,20,30,40]){ctx.beginPath();ctx.arc(wx(0),wy(ego.y),r*scale,0,7);ctx.stroke();
+      ctx.fillStyle="#64748b";ctx.font="10.5px sans-serif";ctx.textAlign="center";
+      ctx.fillText(r+" m",wx(0)+r*scale*Math.cos(2.2),wy(ego.y)-r*scale*Math.sin(2.2));}
+    ctx.setLineDash([]);
+    // 物体线段
+    for(const s of segs){ctx.strokeStyle="#94a3b8";ctx.lineWidth=3.5;ctx.lineCap="round";
+      ctx.beginPath();ctx.moveTo(wx(s.x1),wy(s.y1));ctx.lineTo(wx(s.x2),wy(s.y2));ctx.stroke();}
+    // 攻击参数
+    const atkS=$("atkS").checked, atkA=$("atkA").checked, atkB=$("atkB").checked, dsp=+$("dspSl").value;
+    $("dsp").textContent=dsp;
+    const attacks=[];
+    if(atkS)attacks.push({dir:Math.atan2(30-ego.y,-2-0)+0,win:3*Math.PI/180,pos:[-2,30],label:"fake_static",staticWorld:true});
+    if(atkA)attacks.push({dir:Math.PI/2,win:2*Math.PI/180,label:"fake_ahead",dist:dsp});
+    if(atkB)attacks.push({dir:0,win:1*Math.PI/180,label:"fake_beside",dist:9});
+    // 扫描
+    const sweep=(frame*6)%360;
+    const rngL=mulberry32(7+frame);
+    for(let deg=0;deg<360;deg++){
+      const th=deg*Math.PI/180, l=[Math.cos(th),Math.sin(th)];
+      let d=Infinity,lab=null;
+      for(const s of segs){const dd=ray(0,ego.y,l[0],l[1],s);if(dd<d){d=dd;lab=s.label}}
+      let spf=false,vr=0;
+      for(const a of attacks){
+        let dir=a.dir, dist;
+        if(a.staticWorld){dir=Math.atan2(a.pos[1]-ego.y,a.pos[0]);dist=Math.hypot(a.pos[0],a.pos[1]-ego.y)}
+        else dist=a.dist;
+        let dd=Math.atan2(Math.sin(th-dir),Math.cos(th-dir));
+        if(Math.abs(dd)<=a.win){d=dist;spf=true;lab=a.label;vr=egoSpeed*Math.sin(th)}
+      }
+      if(!isFinite(d))continue;
+      const dm=d+rngL()*0.06;
+      const px=wx(dm*l[0]),py=wy(ego.y+dm*l[1]);
+      // 光束（每2°）
+      if(deg%2===0){ctx.strokeStyle="rgba(56,189,248,.10)";ctx.lineWidth=.6;
+        ctx.beginPath();ctx.moveTo(wx(0),wy(ego.y));ctx.lineTo(px,py);ctx.stroke();}
+      // 扫描高亮
+      const sd=Math.abs(((deg-sweep+540)%360)-180);
+      if(sd<3&&!spf){ctx.strokeStyle="rgba(56,189,248,.8)";ctx.lineWidth=1.4;
+        ctx.beginPath();ctx.moveTo(wx(0),wy(ego.y));ctx.lineTo(px,py);ctx.stroke();}
+      if(spf){ctx.strokeStyle="#f87171";ctx.lineWidth=2;const s2=6;
+        ctx.beginPath();ctx.moveTo(px-s2,py-s2);ctx.lineTo(px+s2,py+s2);ctx.moveTo(px+s2,py-s2);ctx.lineTo(px-s2,py+s2);ctx.stroke();}
+      else if(lab==="bike"){ctx.fillStyle="#60a5fa";ctx.beginPath();ctx.arc(px,py,3.4,0,7);ctx.fill();}
+      else{ctx.fillStyle="#4ade80";ctx.beginPath();ctx.arc(px,py,2.1,0,7);ctx.fill();}
+    }
+    // 注入窗口扇形
+    for(const a of attacks){
+      let dir=a.dir,R;
+      if(a.staticWorld){dir=Math.atan2(a.pos[1]-ego.y,a.pos[0]);R=Math.hypot(a.pos[0],a.pos[1]-ego.y)}
+      else R=a.dist;
+      ctx.fillStyle="rgba(248,113,113,.34)";ctx.strokeStyle="#fecaca";ctx.setLineDash([4,4]);ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(wx(0),wy(ego.y));
+      ctx.arc(wx(0),wy(ego.y),Math.min((R-2)*scale,44*scale),dir-a.win,dir+a.win);ctx.closePath();
+      ctx.fill();ctx.stroke();ctx.setLineDash([]);
+    }
+    // 攻击者
+    if(atkS||atkA){const ap=[6,20];ctx.fillStyle="#7f1d1d";ctx.strokeStyle="#f87171";ctx.lineWidth=2;
+      ctx.beginPath();ctx.roundRect(wx(ap[0])-7,wy(ap[1])-6,14,12,3);ctx.fill();ctx.stroke();
+      ctx.fillStyle="#f87171";ctx.font="11px sans-serif";ctx.textAlign="center";ctx.fillText("攻击器",wx(ap[0]),wy(ap[1])+20);}
+    // 自车（白底琥珀）
+    ctx.save();ctx.translate(wx(0),wy(ego.y));
+    ctx.fillStyle="#f8fafc";ctx.strokeStyle="#fbbf24";ctx.lineWidth=2.2;
+    ctx.beginPath();ctx.roundRect(-9,-16,18,32,4);ctx.fill();ctx.stroke();
+    ctx.fillStyle="#0b1220";ctx.beginPath();ctx.arc(0,4,4.4,0,7);ctx.fill();
+    ctx.strokeStyle="#fbbf24";ctx.beginPath();ctx.arc(0,4,6.2,0,7);ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle="#fbbf24";ctx.font="12px sans-serif";ctx.textAlign="center";
+    ctx.fillText("自车 11 m/s",wx(0),wy(ego.y)+40);
+    frame++; egoY+=egoSpeed*T*0.22; if(egoY>30)egoY=0;
+    requestAnimationFrame(draw);
+  };
+  draw();
+})();
+
+/* ================= ③ 逐帧检测 ================= */
+(()=>{
+  const cvA=$("cv3a"),cvB=$("cv3b");
+  const egoV=11, SNR=1e-4;
+  const sd=Math.sqrt(K*3/(SNR*2*Math.PI*Math.PI*N*N));
+  let data=null, timer=null;
+  const targets={
+    wall:{vr:()=>egoV, vtof:()=>egoV, truth:"legit"},
+    bike:{vr:()=>egoV-1.2*Math.cos(0.7), vtof:()=>egoV-1.2*Math.cos(0.7), truth:"legit"},
+    fakeS:{vr:()=>egoV*2, vtof:()=>egoV, truth:"spoof"},       // 场景1: 论文 Ha μDop=2μToF
+    fakeA:{vr:()=>egoV*0.5, vtof:()=>0, truth:"spoof"},          // 场景3: 假车恒距 vToF=0
+    fakeB:{vr:()=>0, vtof:()=>0, truth:"spoof-miss"},            // 局限1: 侧方 θ=0
+  };
+  const st=0.03;
+  function reset(){const k=$("tgt").value;data={k,d:[],t:[],vd:[],vt:[]};
+    $("nLab").textContent=0;$("verdict").style.visibility="hidden";
+    $("mD").textContent=$("mT").textContent=$("mDiff").textContent="—";
+    $("tLab").textContent=$("cLab").textContent="—";draw()}
+  function cap(){
+    const tg=targets[data.k];
+    const vrD=tg.vr()+gauss()*sd, vrT=tg.vtof()+gauss()*(st*Math.abs(tg.vtof())+0.15);
+    data.vd.push(vrD);data.vt.push(vrT);
+    const n=data.vd.length;
+    const mD=data.vd.reduce((a,b)=>a+b)/n, mT=data.vt.reduce((a,b)=>a+b)/n;
+    const s1=Math.sqrt(data.vd.reduce((a,b)=>a+(b-mD)**2,0)/(n-1)),
+          s2=Math.sqrt(data.vt.reduce((a,b)=>a+(b-mT)**2,0)/(n-1));
+    const sp=Math.sqrt((s1*s1+s2*s2)/2);
+    const t=Math.abs(mD-mT)/(sp*Math.sqrt(2/n));
+    const crit=tCrit(n-1);
+    $("nLab").textContent=n;
+    $("mD").textContent=mD.toFixed(2);$("mT").textContent=mT.toFixed(2);
+    $("mDiff").textContent=Math.abs(mD-mT).toFixed(2);
+    $("tLab").textContent=t.toFixed(2);$("cLab").textContent=crit.toFixed(2);
+    const v=$("verdict");v.style.visibility="visible";
+    const rej=t>crit;
+    if(tg.truth==="legit"){v.className="badge "+(rej?"warn":"ok");v.textContent=rej?"误报（噪声所致）":"合法 ✓ 一致"}
+    else if(tg.truth==="spoof"){v.className="badge "+(rej?"bad":"warn");v.textContent=rej?"欺骗 ✓ 检出（2:1 失配）":"样本不足…"}
+    else{v.className="badge "+(rej?"warn":"warn");v.textContent=rej?"误报":"无法检出（相对速度≈0，论文局限1）"}
+    draw(t,crit,mD,mT);
+  }
+  function draw(t,crit,mD,mT){
+    // 散点
+    {const [ctx,W,H]=fitCanvas(cvA);ctx.fillStyle="#0e1626";ctx.fillRect(0,0,W,H);
+     const all=data.vd.concat(data.vt);const lo=Math.min(-2,all.length?Math.min(...all)-1:-2),hi=Math.max(13,all.length?Math.max(...all)+1:13);
+     const X=v=>40+(v-lo)/(hi-lo)*(W-60), Y=v=>H-28-(v-lo)/(hi-lo)*(H-45);
+     ctx.strokeStyle="#334155";for(let g=Math.ceil(lo);g<=hi;g++){ctx.beginPath();ctx.moveTo(X(g),12);ctx.lineTo(X(g),H-28);ctx.stroke();}
+     ctx.strokeStyle="#475569";ctx.beginPath();ctx.moveTo(X(lo),Y(lo));ctx.lineTo(X(hi),Y(hi));ctx.setLineDash([6,5]);ctx.stroke();ctx.setLineDash([]);
+     ctx.fillStyle="#64748b";ctx.font="11px sans-serif";ctx.textAlign="center";
+     ctx.fillText("v_ToF →",W/2,H-8);ctx.save();ctx.translate(14,H/2);ctx.rotate(-Math.PI/2);ctx.fillText("v_Dop →",0,0);ctx.restore();
+     ctx.fillStyle="#38bdf8";for(let i=0;i<data.vd.length;i++){ctx.beginPath();ctx.arc(X(data.vt[i]),Y(data.vd[i]),3,0,7);ctx.fill();}
+     if(mD!==undefined){ctx.fillStyle="#fbbf24";ctx.beginPath();ctx.arc(X(mT),Y(mD),5,0,7);ctx.fill();}
+    }
+    // t 曲线
+    {const [ctx,W,H]=fitCanvas(cvB);ctx.fillStyle="#0e1626";ctx.fillRect(0,0,W,H);
+     const nM=40,X=n=>36+n/nM*(W-56);
+     ctx.strokeStyle="#334155";ctx.beginPath();ctx.moveTo(36,16);ctx.lineTo(36,H-26);ctx.moveTo(36,H-26);ctx.lineTo(W-16,H-26);ctx.stroke();
+     ctx.fillStyle="#64748b";ctx.font="11px sans-serif";ctx.textAlign="middle";
+     ctx.textAlign="center";ctx.fillText("样本数 n →",W/2,H-8);
+     const tMax=Math.max(6,t?t*1.3:6);
+     const Y=tt=>H-26-(tt/tMax)*(H-48);
+     // 临界值带
+     const c0=tCrit(5);
+     ctx.fillStyle="rgba(74,222,128,.10)";ctx.fillRect(36,Y(Math.max(c0,0.01)),W-52,H-26-Y(c0));
+     ctx.strokeStyle="#4ade80";ctx.setLineDash([5,4]);ctx.beginPath();
+     for(let n=6;n<=nM;n++){const c=tCrit(n-1);ctx[n===6?"moveTo":"lineTo"](X(n),Y(c));}ctx.stroke();ctx.setLineDash([]);
+     ctx.fillStyle="#4ade80";ctx.textAlign="left";ctx.fillText("临界值 t_{n-1}(0.025)",44,Y(c0)-6);
+     if(t!==undefined){ctx.fillStyle="#f87171";ctx.beginPath();ctx.arc(X(data.vd.length),Y(t),5,0,7);ctx.fill();
+       ctx.fillText("当前 t = "+t.toFixed(2),X(data.vd.length)+8,Y(t)-8);}
+     ctx.textAlign="left";ctx.fillStyle="#64748b";ctx.fillText("t",20,20);
+    }
+  }
+  $("cap").onclick=cap;
+  $("reset").onclick=reset;
+  $("tgt").onchange=reset;
+  $("auto").onclick=()=>{if(timer){clearInterval(timer);timer=null;$("auto").classList.add("off");return}
+    $("auto").classList.remove("off");timer=setInterval(cap,320)};
+  reset();
+})();
+
+/* ================= ④ 协同 LiDAR ================= */
+(()=>{
+  const cv=$("cv4");
+  const vdop=(vL,va,pa,th=90*Math.PI/180)=>0.5*(vL*Math.sin(th)-va*Math.cos(th-pa*Math.PI/180));
+  function draw(){
+    const [ctx,W,H]=fitCanvas(cv);ctx.fillStyle="#0e1626";ctx.fillRect(0,0,W,H);
+    const ve=+$("veSl").value, vc=+$("vcSl").value, pa=+$("paSl").value;
+    $("veL").textContent=ve.toFixed(1);$("vcL").textContent=vc.toFixed(1);$("paL").textContent=pa;
+    const X=va=>46+va/20*(W-70), Y=d=>H/2-d/6*(H/2-24);
+    ctx.strokeStyle="#334155";[ -4,-2,0,2,4,6].forEach(d=>{if(d>=-4&&d<=6){ctx.beginPath();ctx.moveTo(46,Y(d));ctx.lineTo(W-24,Y(d));ctx.stroke();
+      ctx.fillStyle="#64748b";ctx.font="10.5px";ctx.textAlign="right";ctx.fillText(d,42,Y(d)+3)}});
+    ctx.strokeStyle="#475569";ctx.beginPath();ctx.moveTo(46,Y(0));ctx.lineTo(W-24,Y(0));ctx.stroke();
+    const curve=[];for(let va=0;va<=20.01;va+=0.1)curve.push([va,Math.abs(vdop(vc,va,pa))-Math.abs(vdop(ve,va,pa))]);
+    ctx.strokeStyle="#38bdf8";ctx.lineWidth=2;ctx.beginPath();
+    curve.forEach((p,i)=>ctx[i?"lineTo":"moveTo"](X(p[0]),Y(Math.max(-6,Math.min(6,p[1])))));ctx.stroke();ctx.lineWidth=1;
+    const vaC=10, dC=Math.abs(vdop(vc,vaC,pa))-Math.abs(vdop(ve,vaC,pa));
+    $("vaCur").textContent=vaC;$("diffCur").textContent=dC.toFixed(2);
+    ctx.fillStyle="#fbbf24";ctx.beginPath();ctx.arc(X(vaC),Y(Math.max(-6,Math.min(6,dC))),6,0,7);ctx.fill();
+    ctx.fillStyle="#fbbf24";ctx.font="12px";ctx.textAlign="left";
+    ctx.fillText("当前差异 "+dC.toFixed(2)+" m/s",X(vaC)+10,Y(dC)-10);
+    ctx.fillStyle="#64748b";ctx.font="11px";ctx.textAlign="center";ctx.fillText("攻击者速度 |va| →",W/2,H-8);
+    const note=$("coopNote");
+    if(Math.abs(ve-vc)<0.05){note.className="badge bad";note.textContent="两 LiDAR 同速 → 差异恒 0，不可检测（图11d）"}
+    else{note.className="badge ok";note.textContent="两 LiDAR 异速 → 差异 ≠ 0，可检测"}
+    requestAnimationFrame?0:0;
+  }
+  ["veSl","vcSl","paSl"].forEach(i=>$(i).oninput=draw); draw();
+})();
+
+/* ================= ⑤ 统计功效 ================= */
+(()=>{
+  const cv=$("cv5");
+  const roads={h:{v:16.5,a:0.5},r:{v:10,a:1.5},c:{v:5.5,a:5}};
+  const sdOf=snr=>Math.sqrt(K*3/(snr*2*Math.PI*Math.PI*N*N));
+  function power(n,vRel,p,snr,trials){
+    const sd=sdOf(snr), st_=0.03*vRel;
+    let rej=0;
+    for(let tr=0;tr<trials;tr++){
+      let sD=0,sT=0,sD2=0,sT2=0;
+      for(let i=0;i<n;i++){const a=rng()<p;
+        const vd=(a?2:1)*vRel+gauss()*sd;    // 场景1: 欺骗帧 μDop=2v（论文式VI-C）
+        const vt=vRel+gauss()*st_;
+        sD+=vd;sT+=vt;sD2+=vd*vd;sT2+=vt*vt;}
+      const mD=sD/n,mT=sT/n;
+      const v1=(sD2-n*mD*mD)/(n-1),v2=(sT2-n*mT*mT)/(n-1);
+      const sp=Math.sqrt((v1+v2)/2);
+      const t=Math.abs(mD-mT)/(sp*Math.sqrt(2/n));
+      if(t>tCrit(n-1))rej++;
+    }
+    return rej/trials;
+  }
+  function calc(){
+    const vRel=roads[$("road").value].v, p=+$("pSl").value, e=+$("snrSl").value, snr=Math.pow(10,e);
+    $("pL").textContent=p.toFixed(2);$("snrL").textContent=e;
+    // 功率曲线 n=4..60（平滑 MC）
+    const pts=[];for(let n=4;n<=60;n+=2)pts.push([n,power(n,vRel,p,snr,300)]);
+    // 最小 n
+    let nStar=null;for(let n=4;n<=200;n+=1){const pw=power(n,vRel,p,snr,500);if(pw>=0.9){nStar=n;
+      $("pwStar").textContent=pw.toFixed(2);
+      const f1=2*(1-0.1)/(2*(1-0.1)+0.05+0.1);
+      $("f1Lab").textContent=(2*pw/(2*pw+0.05+(1-pw))).toFixed(3);break}}
+    $("nStar").textContent=nStar===null?">200":nStar;
+    // 绘图
+    const [ctx,W,H]=fitCanvas(cv);ctx.fillStyle="#0e1626";ctx.fillRect(0,0,W,H);
+    const X=n=>44+(n-4)/(60-4)*(W-64), Y=pw=>H-26-pw*(H-46);
+    ctx.strokeStyle="#334155";[0,.25,.5,.75,1].forEach(p=>{ctx.beginPath();ctx.moveTo(44,Y(p));ctx.lineTo(W-20,Y(p));ctx.stroke();
+      ctx.fillStyle="#64748b";ctx.font="10.5px";ctx.textAlign="right";ctx.fillText(p.toFixed(2),40,Y(p)+3)});
+    ctx.strokeStyle="#4ade80";ctx.setLineDash([6,5]);ctx.beginPath();ctx.moveTo(44,Y(0.9));ctx.lineTo(W-20,Y(0.9));ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle="#4ade80";ctx.textAlign="left";ctx.fillText("目标功效 0.9",48,Y(0.9)-6);
+    ctx.strokeStyle="#38bdf8";ctx.lineWidth=2;ctx.beginPath();
+    pts.forEach((q,i)=>ctx[i?"moveTo":"moveTo"](X(q[0]),Y(q[1])));
+    ctx.beginPath();pts.forEach((q,i)=>ctx[i?"lineTo":"moveTo"](X(q[0]),Y(q[1])));ctx.stroke();ctx.lineWidth=1;
+    if(nStar&&nStar<=60){ctx.fillStyle="#fbbf24";ctx.beginPath();ctx.arc(X(nStar),Y(0.9),6,0,7);ctx.fill();
+      ctx.font="12px";ctx.fillText("n* = "+nStar,X(nStar)+10,Y(0.9)-10);}
+    ctx.fillStyle="#64748b";ctx.font="11px";ctx.textAlign="center";ctx.fillText("样本数 n →",W/2,H-8);
+  }
+  ["road","pSl","snrSl"].forEach(i=>$(i).oninput=()=>{if(i!=="road")calc()});
+  ["road","pSl","snrSl"].forEach(i=>$(i).onchange=calc);
+  $("recalc").onclick=calc; rng=mulberry32(20260709); calc();
+})();
+
+/* 导航高亮 */
+document.querySelectorAll("nav a").forEach(a=>a.onclick=()=>{
+  document.querySelectorAll("nav a").forEach(x=>x.classList.remove("on"));a.classList.add("on")});
+</script>
+</body>
+</html>
