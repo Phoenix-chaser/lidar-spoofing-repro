@@ -288,8 +288,8 @@ def _draw_virtual_scene(ax_scene):
     _draw_car(ax_scene, 0, 0)
     ax_scene.annotate("", xy=(0, 7.5), xytext=(0, 3.2),
                       arrowprops=dict(arrowstyle="-|>", color="#4ade80", lw=2))
-    ax_scene.text(0.9, 6.0, "11 m/s", fontsize=12, color="#4ade80",
-                  weight="bold", zorder=9)
+    ax_scene.text(-0.9, 6.0, "11 m/s", fontsize=12, color="#4ade80",
+                  weight="bold", ha="right", zorder=9)
 
     # 标注
     def note(text, xy, xytext, color):
@@ -299,7 +299,7 @@ def _draw_virtual_scene(ax_scene):
                           bbox=dict(boxstyle="round,pad=0.3", fc=SC_BG,
                                     ec=color, lw=0.7, alpha=0.85))
 
-    note("自车 + 虚拟 2-D LiDAR\n1°×360°，0.1 s/帧", (1.4, 1.9), (-16.5, -6),
+    note("自车 + 虚拟 2-D LiDAR\n1°×360°，0.1 s/帧", (1.4, 1.9), (-10, -6.2),
          "#4ade80")
     note("虚拟攻击器\n（<60 美元三件套）",
          tuple(attacks["ahead"]["attacker"]), (6.2, 37), "#f87171")
