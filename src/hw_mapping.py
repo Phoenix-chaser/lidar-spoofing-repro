@@ -126,10 +126,10 @@ def _panel_lidar(ax):
     ax.text(21, 52, "模型级：\n测距噪声 3 cm\n1° 角分辨率", fontsize=9.5,
             ha="left", color="#6b7280")
     _arrow(ax, 41, 70, 28, 33, color=C_MAP, style="--")
-    ax.text(36, 58, "公式级：\n延时 → 假距离", fontsize=11.5, ha="right",
+    ax.text(31, 63, "公式级：\n延时 → 假距离", fontsize=11.5, ha="right",
             color="#6b7280")
     _arrow(ax, 65, 71, 47, 33, color=C_MAP, style="--")
-    ax.text(71, 52, "信号的物理\n（单程 vs 往返）", fontsize=11.5, ha="left",
+    ax.text(73, 52, "信号的物理\n（单程 vs 往返）", fontsize=11.5, ha="left",
             color="#6b7280")
     _arrow(ax, 87, 71, 82, 33, color=C_MAP, style="--")
     ax.text(96, 52, "闭环检测\n（软件新增）", fontsize=11.5, ha="right",
@@ -187,9 +187,9 @@ def _panel_virtual_interferometer(ax):
     _arrow(ax, 92.5, 53, 92.5, 42.5, color=C_SW_EDGE, lw=2)
     # 拍频示意波形（接收器内部）
     tt = np.linspace(0, 1, 80)
-    ax.plot(66 + 16 * tt, 57 + 2.2 * np.cos(2 * np.pi * 9 * tt),
-            color="#7c3aed", lw=1.6)
-    ax.text(74, 53.5, "拍频信号 @ Δf", fontsize=11, ha="center",
+    ax.plot(64 + 18 * tt, 46.5 + 2.4 * np.cos(2 * np.pi * 9 * tt),
+            color="#7c3aed", lw=1.8)
+    ax.text(73, 41.5, "拍频信号 @ Δf", fontsize=11, ha="center",
             color="#7c3aed")
     ax.text(50, 20, "全场混频 + 低通数值验证：Pout 公式残差 2.9e-3"
             "（仅低通滤波器通带下垂）",
@@ -303,7 +303,7 @@ def _draw_virtual_scene(ax_scene):
          "#4ade80")
     note("虚拟攻击器\n（<60 美元三件套）",
          tuple(attacks["ahead"]["attacker"]), (6.2, 37), "#f87171")
-    note("假静态墙\n（场景1）", tuple(attacks["static"]["pos"]), (-16.2, 37.5),
+    note("假静态墙\n（场景1）", tuple(attacks["static"]["pos"]), (-16.2, 33),
          "#f87171")
     note("前方假车\n（场景3）", (0, 12), (-16.2, 20.5), "#f87171")
     note("侧方假目标\n（局限1）", (9, 0), (10.8, -6), "#f87171")
@@ -312,7 +312,8 @@ def _draw_virtual_scene(ax_scene):
     note("红扇形 = 欺骗注入\n角窗口（式2）", (np.cos(np.deg2rad(93.8)) * 24,
          np.sin(np.deg2rad(93.8)) * 24), (-16.2, 12.5), "#fca5a5")
 
-    ax_scene.set_title("虚拟攻击场景（scan() 第 0 帧真实渲染）", fontsize=14,
+    ax_scene.set_title("虚拟攻击场景（scan() 第 0 帧真实渲染）\n"
+                       "红色扇形 = 式(2)欺骗注入的角窗口", fontsize=13.5,
                        color="#0f172a")
     ax_scene.set_xlabel("x (m)", fontsize=12)
     ax_scene.set_ylabel("y (m)", fontsize=12)

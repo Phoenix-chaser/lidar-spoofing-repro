@@ -273,7 +273,7 @@ def plot_closed_loop(results, scans, out_path, scan_idx=10):
         if filtered:
             miss_xy = (ego_xy[0] + 9.0, ego_xy[1])
             ax.annotate("残留欺骗点 = 侧方假目标\n（论文局限1：相对速度≈0，未检出）",
-                        xy=miss_xy, xytext=(ego_xy[0] + 12, ego_xy[1] - 14),
+                        xy=miss_xy, xytext=(ego_xy[0] + 13, ego_xy[1] - 17),
                         fontsize=11.5, color="#fca5a5", zorder=9,
                         arrowprops=dict(arrowstyle="->", color="#fca5a5",
                                         lw=1.3),
@@ -304,12 +304,12 @@ def plot_closed_loop(results, scans, out_path, scan_idx=10):
                    markeredgecolor="#052e16", markeredgewidth=1.5,
                    label="自车 + LiDAR"),
     ]
-    axes[0].legend(handles=handles, fontsize=11.5, loc="upper left",
-                   facecolor="#0f172a", edgecolor="#334155",
-                   labelcolor="#e2e8f0")
+    fig.legend(handles=handles, fontsize=12, loc="lower center", ncol=4,
+               frameon=True, facecolor="#0f172a", edgecolor="#334155",
+               labelcolor="#e2e8f0", bbox_to_anchor=(0.5, 0.0))
     fig.suptitle(f"闭环仿真（第 {scan_idx} 帧）：2-D LiDAR + 式(2)欺骗注入 + "
                  "式(5)(6)多普勒 + Hotelling T² 滤除", fontsize=16,
                  weight="bold")
-    fig.tight_layout()
+    fig.tight_layout(rect=(0, 0.075, 1, 1))
     fig.savefig(out_path, dpi=160, bbox_inches="tight")
     plt.close(fig)
