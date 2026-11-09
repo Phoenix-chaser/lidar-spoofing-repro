@@ -26,6 +26,12 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
+plt.rcParams["font.family"] = ["Noto Sans CJK SC", "DejaVu Sans"]
+plt.rcParams["axes.unicode_minus"] = False
+plt.rcParams.update({"font.size": 11.5, "axes.titlesize": 14,
+                     "axes.labelsize": 12.5, "legend.fontsize": 10.5,
+                     "xtick.labelsize": 10.5, "ytick.labelsize": 10.5})
+
 from src import cooperative
 from src.detection import f1_score
 from src import detection as det
@@ -74,7 +80,7 @@ def step3_fig11(log):
     log("步骤 3：Fig.11 复现 —— 协同 LiDAR 的 Doppler 速度差")
     log("=" * 70)
     combos = [(2.0, 1.0), (2.0, 3.0), (2.0, 4.0), (2.0, 2.0)]
-    fig, axes = plt.subplots(2, 2, figsize=(11, 8), sharex=True, sharey=True)
+    fig, axes = plt.subplots(2, 2, figsize=(10.5, 8), sharex=True, sharey=True)
     rows = []
     for ax, (v_ego, v_coop) in zip(axes.flat, combos):
         va, curves = cooperative.fig11_data(v_ego, v_coop)
@@ -83,7 +89,7 @@ def step3_fig11(log):
             for x, yy in zip(va[::40], y[::40]):
                 rows.append((v_ego, v_coop, PHI_LABELS[phi_a], x, yy))
         ax.axhline(0.0, color="gray", lw=0.8)
-        ax.set_title(rf"$|v_L^{{ego}}|$={v_ego:.0f}, $|v_L^{{coop}}|$={v_coop:.0f} m/s")
+        ax.set_title(rf"$|v_L^{{ego}}|$={v_ego:.0f}, $|v_L^{{coop}}|$={v_coop:.0f} m/s", fontsize=14)
         ax.grid(alpha=0.3)
         if v_ego == v_coop:
             detectable = "不可检测（速度相同）"
@@ -94,7 +100,7 @@ def step3_fig11(log):
         ax.set_xlabel(r"attacker speed $|v_a|$ (m/s)")
     for ax in axes[:, 0]:
         ax.set_ylabel(r"$|v_{Dop}^{coop}| - |v_{Dop}^{ego}|$ (m/s)")
-    axes[0, 0].legend(fontsize=9)
+    axes[0, 0].legend(fontsize=11)
     fig.suptitle("Fig.11 reproduction: cooperative-LiDAR Doppler velocity difference "
                  "(attacker ahead, $\\theta$=90°)")
     fig.tight_layout()
@@ -131,17 +137,17 @@ def step5_fig13(log, k, trials):
         w = csv.writer(f)
         w.writerow(["attack", "road", "spoofed_proportion", "snr", "min_samples"])
         w.writerows(rows)
-    fig, axes = plt.subplots(1, 3, figsize=(13, 4), sharey=True)
+    fig, axes = plt.subplots(1, 3, figsize=(12.5, 4.4), sharey=True)
     for ax, attack in zip(axes, (1, 2, 3)):
         for road in det.ROAD_CONDITIONS:
             xs = [r[2] for r in rows if r[0] == attack and r[1] == road]
             ys = [r[4] for r in rows if r[0] == attack and r[1] == road]
-            ax.plot(xs, ys, ROAD_STYLE[road], label=ROAD_LABELS[road], ms=5)
-        ax.set_title(f"attack scenario {attack}")
+            ax.plot(xs, ys, ROAD_STYLE[road], label=ROAD_LABELS[road], ms=6, lw=1.8)
+        ax.set_title(f"attack scenario {attack}", fontsize=13.5)
         ax.set_xlabel("spoofed signal proportion $p$")
         ax.grid(alpha=0.3)
     axes[0].set_ylabel("min #samples for power 0.9")
-    axes[0].legend(fontsize=8)
+    axes[0].legend(fontsize=10)
     fig.suptitle("Fig.13 reproduction: samples needed vs spoofed proportion (SNR=1e-4, α=0.05)")
     fig.tight_layout()
     fig.savefig(os.path.join(FIG_DIR, "fig13.png"), dpi=150)
@@ -163,19 +169,19 @@ def step6_fig14(log, k, trials):
         w = csv.writer(f)
         w.writerow(["attack", "road", "spoofed_proportion", "snr", "min_samples"])
         w.writerows(rows)
-    fig, axes = plt.subplots(1, 3, figsize=(13, 4), sharey=True)
+    fig, axes = plt.subplots(1, 3, figsize=(12.5, 4.4), sharey=True)
     for ax, attack in zip(axes, (1, 2, 3)):
         for road in det.ROAD_CONDITIONS:
             xs = [r[3] for r in rows if r[0] == attack and r[1] == road]
             ys = [r[4] for r in rows if r[0] == attack and r[1] == road]
-            ax.plot(xs, ys, ROAD_STYLE[road], label=ROAD_LABELS[road], ms=5)
+            ax.plot(xs, ys, ROAD_STYLE[road], label=ROAD_LABELS[road], ms=6, lw=1.8)
         ax.set_xscale("log")
         ax.set_yscale("log")
-        ax.set_title(f"attack scenario {attack}")
+        ax.set_title(f"attack scenario {attack}", fontsize=13.5)
         ax.set_xlabel("SNR")
         ax.grid(alpha=0.3, which="both")
     axes[0].set_ylabel("min #samples for power 0.9")
-    axes[0].legend(fontsize=8)
+    axes[0].legend(fontsize=10)
     fig.suptitle("Fig.14 reproduction: samples needed vs SNR (p=0.1, α=0.05, log-log)")
     fig.tight_layout()
     fig.savefig(os.path.join(FIG_DIR, "fig14.png"), dpi=150)
@@ -280,12 +286,12 @@ def step10_interferometer(log):
         f"p95 {stats['p95_abs_err']*100:.2f}% —— 与论文 \"~3% 速度检测误差\" 声明一致")
 
     # Fig.7 风格频谱图
-    fig, axes = plt.subplots(1, 2, figsize=(12, 4.2))
+    fig, axes = plt.subplots(1, 2, figsize=(11.5, 4.6))
     for ax, case, title in zip(
             axes, (a, b),
             (r"(a) $v$=0.75 cm/s (clean)", r"(b) $\bar{v}$=1.55 cm/s (two peaks)")):
         spec = case["spec"] / case["spec"].max()
-        ax.plot(case["freqs"] / 1e3, 20 * np.log10(spec + 1e-12), lw=0.8)
+        ax.plot(case["freqs"] / 1e3, 20 * np.log10(spec + 1e-12), lw=1.1)
         ax.axvline(case["delta_f"] / 1e3, color="r", ls="--", lw=1)
         ax.axvline(2 * case["v_true"] / itf.LASER_WAVELENGTH / 1e3,
                    color="g", ls=":", lw=1)
@@ -294,11 +300,11 @@ def step10_interferometer(log):
         ax.set_xlabel("Frequency (kHz)")
         ax.set_title(title)
         ax.grid(alpha=0.3)
-    axes[0].set_ylabel("Normalized spectrum (dB)")
+    axes[0].set_ylabel("Normalized spectrum (dB)", fontsize=12)
     axes[0].legend(["FFT spectrum", rf"peak $\Delta f$={a['delta_f']/1e3:.2f} kHz",
-                    "theory"], fontsize=8)
+                    "theory"], fontsize=10.5)
     axes[1].legend(["FFT spectrum", rf"peak $\Delta f$={b['delta_f']/1e3:.2f} kHz",
-                    "theory"], fontsize=8)
+                    "theory"], fontsize=10.5)
     fig.suptitle("Fig.7 reproduction: Doppler-shift spectrum from the "
                  "interferometer testbed simulation (635 nm, SNR 30 dB)")
     fig.tight_layout()
@@ -317,13 +323,14 @@ def step10_interferometer(log):
 
 def step11_hw_mapping(log):
     """生成"论文硬件实验 ↔ 软件模拟"映射图（器件级标注 + 等效层级）。"""
-    from src.hw_mapping import plot_hw_mapping
+    from src.hw_mapping import plot_hw_mapping, plot_panels
     plot_hw_mapping(os.path.join(FIG_DIR, "fig_hw_mapping.png"))
+    plot_panels(FIG_DIR)
     log("")
     log("=" * 70)
     log("步骤 11：硬件实验 ↔ 软件模拟映射图")
     log("=" * 70)
-    log("  已保存 figures/fig_hw_mapping.png")
+    log("  已保存 fig_hw_mapping.png + 5 张单面板图（README 内嵌用）")
     log("  面板 A：干涉 testbed（激光管/分束器/M0/M1/OPT101/示波器 → 干涉仿真模块）")
     log("  面板 B：实机攻击演示（YD X2L/攻击器三件套 → 闭环仿真各环节）")
     log("  均标注等效层级（公式级/模型级/算法级）与未模拟项（红框）")
@@ -337,7 +344,7 @@ def step12_virtual_testbed(log):
     log("=" * 70)
     log("步骤 12：仿真硬件原理图（虚拟器件 + 实现方式）")
     log("=" * 70)
-    log("  已保存 figures/fig_virtual_testbed.png")
+    log("  已保存 fig_virtual_testbed.png + 单面板图（见 plot_panels 输出）")
     log("  面板 A：虚拟干涉 testbed 器件链（激光管/分束器/M0/M1/接收器/示波器，")
     log("           框内标注各自实现公式）")
     log("  下左  ：虚拟攻击场景俯视图（scan() 第 0 帧真实渲染：光束、点云、")

@@ -42,12 +42,28 @@ results are computer-simulation based (§VII-B), so this reproduction is faithfu
 
 每个硬件器件对应的软件模块、等效层级（公式级 = 直接实现论文公式并验证；模型级 = 简化物理建模；算法级 = 相同数据处理）以及未模拟项（红框）：
 
-![Hardware-software mapping](figures/fig_hw_mapping.png)
+面板 A —— 干涉 testbed（Fig.6/7）的映射：
 
-**仿真硬件原理图**（虚拟器件 + 每个器件框内直接标注实现公式/函数；左下为攻击场景的
-`scan()` 第 0 帧真实渲染——光束、点云、攻击器与三类假目标一目了然）：
+![HW-SW mapping: interferometer](figures/fig_map_interferometer.png)
 
-![Virtual testbed schematic](figures/fig_virtual_testbed.png)
+面板 B —— 实机攻击演示（Fig.2/3/4）的映射：
+
+![HW-SW mapping: attack demo](figures/fig_map_attack.png)
+
+**仿真硬件原理图**（虚拟器件 + 每个器件框内直接标注实现公式/函数）。拆为三张单图便于阅读；
+组合版 `figures/fig_virtual_testbed.png`、`figures/fig_hw_mapping.png` 适合放进汇报 PPT：
+
+① 虚拟干涉 testbed 器件链（框内 = 实现公式）：
+
+![Virtual interferometer](figures/fig_virtual_interferometer.png)
+
+② 虚拟攻击场景（`scan()` 第 0 帧真实渲染：光束、点云、攻击器与三类假目标）：
+
+![Virtual attack scene](figures/fig_virtual_scene.png)
+
+③ 虚拟器件实现方式（LiDAR / 攻击器 / Doppler 信道 / 跟踪+检测）：
+
+![Virtual device implementations](figures/fig_virtual_impl.png)
 
 器件级明细：
 

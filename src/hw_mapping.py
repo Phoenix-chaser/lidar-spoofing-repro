@@ -24,7 +24,7 @@ C_MISS = "#fee2e2"    # 未模拟盒
 C_MISS_EDGE = "#dc2626"
 
 
-def _box(ax, x, y, w, h, text, fc, ec, fs=8.5):
+def _box(ax, x, y, w, h, text, fc, ec, fs=10):
     ax.add_patch(FancyBboxPatch((x - w / 2, y - h / 2), w, h,
                                 boxstyle="round,pad=0.6",
                                 fc=fc, ec=ec, lw=1.4))
@@ -40,9 +40,9 @@ def _arrow(ax, x1, y1, x2, y2, color="#475569", style="-", lw=1.6, ms=14):
 def _panel_interferometer(ax):
     ax.set_xlim(0, 100); ax.set_ylim(0, 100); ax.axis("off")
     ax.text(50, 97, "A. 干涉测速 testbed（论文 Fig.6/7）", ha="center",
-            fontsize=13, weight="bold")
+            fontsize=15, weight="bold")
     # ---- 硬件行
-    ax.text(3, 91, "论文硬件", fontsize=10, color=C_HW_EDGE, weight="bold",
+    ax.text(3, 91, "论文硬件", fontsize=12, color=C_HW_EDGE, weight="bold",
             ha="left")
     _box(ax, 12, 80, 14, 13, "激光管\nPL202\n635 nm", C_HW, C_HW_EDGE)
     _box(ax, 28, 80, 13, 12, "分束器\nCCM1-BS013", C_HW, C_HW_EDGE)
@@ -58,7 +58,7 @@ def _panel_interferometer(ax):
     _arrow(ax, 73.5, 80, 79, 80)
 
     # ---- 软件行
-    ax.text(3, 40, "软件模拟", fontsize=10, color=C_SW_EDGE, weight="bold",
+    ax.text(3, 40, "软件模拟", fontsize=12, color=C_SW_EDGE, weight="bold",
             ha="left")
     _box(ax, 14, 28, 15, 12, "$F_0=c/\\lambda$\n635 nm 载频", C_SW, C_SW_EDGE)
     _box(ax, 39, 28, 22, 15, "photodiode_output()\nPout 拍频公式\n"
@@ -72,24 +72,24 @@ def _panel_interferometer(ax):
 
     # ---- 映射箭头（标注置于线旁，不压线）
     _arrow(ax, 48, 62, 42, 37, color=C_MAP, style="--")
-    ax.text(24, 51, "公式级等效\n（全场混频验证\n残差 2.9e-3）", fontsize=7.5,
+    ax.text(24, 51, "公式级等效\n（全场混频验证\n残差 2.9e-3）", fontsize=11.5,
             ha="center", color="#6b7280")
     _arrow(ax, 86, 71.5, 68, 37, color=C_MAP, style="--")
-    ax.text(86, 54, "算法级\n（相同处理）", fontsize=7.5, ha="right",
+    ax.text(86, 54, "算法级\n（相同处理）", fontsize=11.5, ha="right",
             color="#6b7280")
 
     # ---- 未模拟
     _box(ax, 50, 9, 88, 11,
          "未模拟（以论文 §IV-B1 公式替代）：真实光子传播 · 探测器电路响应 · "
-         "实验室环境振动", C_MISS, C_MISS_EDGE, fs=8.5)
+         "实验室环境振动", C_MISS, C_MISS_EDGE, fs=12)
 
 
 def _panel_lidar(ax):
     ax.set_xlim(0, 100); ax.set_ylim(0, 100); ax.axis("off")
     ax.text(50, 97, "B. 实机攻击演示 → 攻击+检测闭环仿真（论文 Fig.2/3/4）",
-            ha="center", fontsize=13, weight="bold")
+            ha="center", fontsize=15, weight="bold")
     # ---- 硬件行
-    ax.text(3, 91, "论文硬件", fontsize=10, color=C_HW_EDGE, weight="bold",
+    ax.text(3, 91, "论文硬件", fontsize=12, color=C_HW_EDGE, weight="bold",
             ha="left")
     _box(ax, 14, 80, 18, 13, "受害 LiDAR\nYD X2L（自车）\n真实点云输出",
          C_HW, C_HW_EDGE)
@@ -111,9 +111,9 @@ def _panel_lidar(ax):
     _box(ax, 27, 24, 16, 15, "式(2)注入\n$t_a=t_s+\\tau_{spoof}$\n"
         "先到先得替换", C_SW, C_SW_EDGE, fs=7.5)
     _box(ax, 45, 24, 18, 15, "式(5)(6)\nDoppler 合成\n合法 2v/c · 欺骗 v/c\n"
-        "（噪声: 式(28)）", C_SW, C_SW_EDGE, fs=7)
+        "（噪声: 式(28)）", C_SW, C_SW_EDGE, fs=9)
     _box(ax, 63, 24, 14, 15, "锚点跟踪\n$(v_{Dop},v_{ToF})$\n逐目标配对",
-         C_SW, C_SW_EDGE, fs=7)
+         C_SW, C_SW_EDGE, fs=9)
     _box(ax, 81, 24, 15, 15, "T² 检测器\n(式 18/19)\n判决+滤除", C_SW,
          C_SW_EDGE, fs=7.5)
     _arrow(ax, 17, 24, 19, 24, color=C_SW_EDGE)
@@ -123,26 +123,26 @@ def _panel_lidar(ax):
 
     # ---- 映射箭头（标注置于线旁，不压线）
     _arrow(ax, 14, 71, 10, 33, color=C_MAP, style="--")
-    ax.text(21, 52, "模型级：\n测距噪声 3 cm\n1° 角分辨率", fontsize=7.5,
+    ax.text(21, 52, "模型级：\n测距噪声 3 cm\n1° 角分辨率", fontsize=9.5,
             ha="left", color="#6b7280")
     _arrow(ax, 41, 70, 28, 33, color=C_MAP, style="--")
-    ax.text(36, 58, "公式级：\n延时 → 假距离", fontsize=7.5, ha="right",
+    ax.text(36, 58, "公式级：\n延时 → 假距离", fontsize=11.5, ha="right",
             color="#6b7280")
     _arrow(ax, 65, 71, 47, 33, color=C_MAP, style="--")
-    ax.text(71, 52, "信号的物理\n（单程 vs 往返）", fontsize=7.5, ha="left",
+    ax.text(71, 52, "信号的物理\n（单程 vs 往返）", fontsize=11.5, ha="left",
             color="#6b7280")
     _arrow(ax, 87, 71, 82, 33, color=C_MAP, style="--")
-    ax.text(96, 52, "闭环检测\n（软件新增）", fontsize=7.5, ha="right",
+    ax.text(96, 52, "闭环检测\n（软件新增）", fontsize=11.5, ha="right",
             color="#6b7280")
 
     # ---- 未模拟
     _box(ax, 50, 8, 88, 10,
          "未模拟：商用 LiDAR 固件行为（首达判定近似为\u201c先到先得\u201d）· "
-         "真实光噪声/杂散反射 · 大气衰减", C_MISS, C_MISS_EDGE, fs=8.5)
+         "真实光噪声/杂散反射 · 大气衰减", C_MISS, C_MISS_EDGE, fs=12)
 
 
-def _device_box(ax, x, y, w, h, title, impl, fc=C_HW, ec=C_HW_EDGE, fs=10.5,
-                title_fs=12.5):
+def _device_box(ax, x, y, w, h, title, impl, fc=C_HW, ec=C_HW_EDGE, fs=11.5,
+                title_fs=13.5):
     """虚拟器件框：标题 + 框内实现说明（实现=代码/公式）。"""
     ax.add_patch(FancyBboxPatch((x - w / 2, y - h / 2), w, h,
                                 boxstyle="round,pad=0.6", fc=fc, ec=ec, lw=1.8))
@@ -155,7 +155,7 @@ def _device_box(ax, x, y, w, h, title, impl, fc=C_HW, ec=C_HW_EDGE, fs=10.5,
 def _panel_virtual_interferometer(ax):
     ax.set_xlim(0, 100); ax.set_ylim(0, 100); ax.axis("off")
     ax.text(50, 96, "A. 虚拟干涉测速 testbed（src/interferometer.py）",
-            ha="center", fontsize=16.5, weight="bold")
+            ha="center", fontsize=18, weight="bold")
     _device_box(ax, 10, 66, 17, 24, "虚拟激光管",
                 "$F_0=c/\\lambda$\n635 nm\n$4.72\\times10^{14}$ Hz")
     _device_box(ax, 30, 66, 15, 24, "虚拟分束器",
@@ -176,27 +176,27 @@ def _panel_virtual_interferometer(ax):
                 "误差 p95 3.7%", fc=C_SW, ec=C_SW_EDGE)
     # 光束 / 电信号连线
     _arrow(ax, 18.5, 66, 22.5, 66, lw=2)
-    ax.text(20.5, 71.5, "光束", fontsize=10.5, ha="center")
+    ax.text(20.5, 71.5, "光束", fontsize=11.5, ha="center")
     _arrow(ax, 37.5, 69, 42, 84, color=C_HW_EDGE, lw=2)
     _arrow(ax, 37.5, 63, 42, 51, color=C_HW_EDGE, lw=2)
     _arrow(ax, 61, 84, 66, 73, color=C_HW_EDGE, lw=2)
     _arrow(ax, 61, 49, 66, 60, color=C_HW_EDGE, lw=2)
-    ax.text(63.5, 68, "合束", fontsize=10.5, ha="center")
+    ax.text(63.5, 68, "合束", fontsize=11.5, ha="center")
     _arrow(ax, 84.5, 66, 86, 66, lw=2)
-    ax.text(85.3, 71, "电信号", fontsize=10.5, ha="center")
+    ax.text(85.3, 71, "电信号", fontsize=11.5, ha="center")
     _arrow(ax, 92.5, 53, 92.5, 42.5, color=C_SW_EDGE, lw=2)
     # 拍频示意波形（接收器内部）
     tt = np.linspace(0, 1, 80)
     ax.plot(66 + 16 * tt, 57 + 2.2 * np.cos(2 * np.pi * 9 * tt),
             color="#7c3aed", lw=1.6)
-    ax.text(74, 53.5, "拍频信号 @ Δf", fontsize=9.5, ha="center",
+    ax.text(74, 53.5, "拍频信号 @ Δf", fontsize=11, ha="center",
             color="#7c3aed")
     ax.text(50, 20, "全场混频 + 低通数值验证：Pout 公式残差 2.9e-3"
             "（仅低通滤波器通带下垂）",
-            ha="center", fontsize=12, color="#475569")
+            ha="center", fontsize=13, color="#475569")
     ax.text(50, 10, "对应论文器件：PL202 激光管 · CCM1-BS013 分束器 · "
             "M0/M1 反射镜 · OPT101 光电接收器 · 示波器",
-            ha="center", fontsize=11, color="#6b7280")
+            ha="center", fontsize=12, color="#6b7280")
 
 
 # ---------------- 深色雷达/LiDAR 显示器风格场景 ----------------
@@ -222,7 +222,7 @@ def _draw_car(ax, x, y, heading_deg=90.0):
     ax.add_patch(lidar)
 
 
-def _panel_virtual_lidar(ax_scene, ax_impl):
+def _draw_virtual_scene(ax_scene):
     from . import simulator as sim
     from matplotlib.patches import Wedge
 
@@ -232,7 +232,7 @@ def _panel_virtual_lidar(ax_scene, ax_impl):
     ax_scene.set_xlim(-17, 17); ax_scene.set_ylim(-8, 45)
     for s in ax_scene.spines.values():
         s.set_color("#334155")
-    ax_scene.tick_params(colors="#94a3b8", labelsize=9)
+    ax_scene.tick_params(colors="#94a3b8", labelsize=10.5)
     rng = np.random.default_rng(0)
     ego_speed, segs, attacks, anchors = sim.build_scene()
     ego = np.zeros(2)
@@ -243,7 +243,7 @@ def _panel_virtual_lidar(ax_scene, ax_impl):
         ring = plt.Circle((0, 0), r, fill=False, ec=SC_GRID, lw=0.9, ls="--")
         ax_scene.add_patch(ring)
         ax_scene.text(r * np.cos(np.deg2rad(105)), r * np.sin(np.deg2rad(105)),
-                      f"{r} m", fontsize=9.5, color="#94a3b8", ha="center",
+                      f"{r} m", fontsize=11, color="#cbd5e1", ha="center",
                       va="center", zorder=9,
                       bbox=dict(boxstyle="round,pad=0.18", fc=SC_BG,
                                 ec="none", alpha=0.75))
@@ -288,12 +288,12 @@ def _panel_virtual_lidar(ax_scene, ax_impl):
     _draw_car(ax_scene, 0, 0)
     ax_scene.annotate("", xy=(0, 7.5), xytext=(0, 3.2),
                       arrowprops=dict(arrowstyle="-|>", color="#4ade80", lw=2))
-    ax_scene.text(0.9, 6.0, "11 m/s", fontsize=11, color="#4ade80",
+    ax_scene.text(0.9, 6.0, "11 m/s", fontsize=12, color="#4ade80",
                   weight="bold", zorder=9)
 
     # 标注
     def note(text, xy, xytext, color):
-        ax_scene.annotate(text, xy=xy, xytext=xytext, fontsize=10.5, color=color,
+        ax_scene.annotate(text, xy=xy, xytext=xytext, fontsize=11.5, color=color,
                           arrowprops=dict(arrowstyle="->", color=color, lw=1.4),
                           zorder=9,
                           bbox=dict(boxstyle="round,pad=0.3", fc=SC_BG,
@@ -308,18 +308,19 @@ def _panel_virtual_lidar(ax_scene, ax_impl):
     note("前方假车\n（场景3）", (0, 12), (-16.2, 20.5), "#f87171")
     note("侧方假目标\n（局限1）", (9, 0), (10.8, -6), "#f87171")
     note("自行车\n（动态合法）", (2.5, 25), (6.8, 28.5), "#60a5fa")
-    note("立柱", (0, 20), (-5.2, 23.5), "#cbd5e1")
+    note("立柱", (0, 20), (-5.2, 23.5), "#fde68a")
     note("红扇形 = 欺骗注入\n角窗口（式2）", (np.cos(np.deg2rad(93.8)) * 24,
          np.sin(np.deg2rad(93.8)) * 24), (-16.2, 12.5), "#fca5a5")
 
-    ax_scene.set_title("虚拟攻击场景（scan() 第 0 帧真实渲染）", fontsize=12.5,
+    ax_scene.set_title("虚拟攻击场景（scan() 第 0 帧真实渲染）", fontsize=14,
                        color="#0f172a")
-    ax_scene.set_xlabel("x (m)", fontsize=10)
-    ax_scene.set_ylabel("y (m)", fontsize=10)
+    ax_scene.set_xlabel("x (m)", fontsize=12)
+    ax_scene.set_ylabel("y (m)", fontsize=12)
 
-    # ---------------- 右：器件实现说明
+def _draw_virtual_impl(ax_impl):
+    # 器件实现说明（独立面板）
     ax_impl.set_xlim(0, 100); ax_impl.set_ylim(0, 100); ax_impl.axis("off")
-    ax_impl.text(50, 97, "虚拟器件与实现方式", ha="center", fontsize=14.5,
+    ax_impl.text(50, 97, "虚拟器件与实现方式", ha="center", fontsize=16,
                  weight="bold")
     _device_box(ax_impl, 50, 83, 90, 18, "虚拟 2-D LiDAR（替代 YD X2L）",
                 "scan()：360 条光线 × 场景线段求交，最近交点 = 回波\n"
@@ -341,7 +342,7 @@ def _panel_virtual_lidar(ax_scene, ax_impl):
     _arrow(ax_impl, 50, 27.5, 50, 23.5, color="#475569", ms=13, lw=2)
     ax_impl.text(50, 1.5, "判决：5 合法目标全部通过 · 场景 1/3 假目标检出 · "
                 "侧方同速假目标漏检（= 论文自述局限）",
-                ha="center", fontsize=11, color="#6b7280")
+                ha="center", fontsize=12, color="#6b7280")
 
 
 def plot_virtual_testbed(out_path):
@@ -352,7 +353,8 @@ def plot_virtual_testbed(out_path):
     _panel_virtual_interferometer(ax_a)
     ax_scene = fig.add_subplot(gs[1, 0])
     ax_impl = fig.add_subplot(gs[1, 1])
-    _panel_virtual_lidar(ax_scene, ax_impl)
+    _draw_virtual_scene(ax_scene)
+    _draw_virtual_impl(ax_impl)
     fig.suptitle("仿真硬件原理图：虚拟器件及其实现方式", fontsize=17,
                  weight="bold", y=0.998)
     fig.tight_layout(rect=(0, 0, 1, 0.98))
@@ -373,6 +375,40 @@ def plot_hw_mapping(out_path):
     plt.close(fig)
 
 
+def _save_fig(fig, out_path):
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    fig.savefig(out_path, dpi=160, bbox_inches="tight")
+    plt.close(fig)
+
+
+def plot_panels(figdir):
+    """单面板小图（GitHub README 内嵌用：图窄 → 同字号显示更大）。"""
+    fig, ax = plt.subplots(figsize=(10.8, 6.6))
+    _panel_interferometer(ax)
+    fig.tight_layout()
+    _save_fig(fig, f"{figdir}/fig_map_interferometer.png")
+
+    fig, ax = plt.subplots(figsize=(10.8, 6.6))
+    _panel_lidar(ax)
+    fig.tight_layout()
+    _save_fig(fig, f"{figdir}/fig_map_attack.png")
+
+    fig, ax = plt.subplots(figsize=(10.8, 6.2))
+    _panel_virtual_interferometer(ax)
+    fig.tight_layout()
+    _save_fig(fig, f"{figdir}/fig_virtual_interferometer.png")
+
+    fig, ax = plt.subplots(figsize=(9.6, 9.8))
+    _draw_virtual_scene(ax)
+    fig.tight_layout()
+    _save_fig(fig, f"{figdir}/fig_virtual_scene.png")
+
+    fig, ax = plt.subplots(figsize=(10.8, 7.4))
+    _draw_virtual_impl(ax)
+    fig.tight_layout()
+    _save_fig(fig, f"{figdir}/fig_virtual_impl.png")
+
+
 if __name__ == "__main__":
     import sys
     root = "figures"
@@ -380,3 +416,5 @@ if __name__ == "__main__":
     print(f"saved: {root}/fig_hw_mapping.png")
     plot_virtual_testbed(f"{root}/fig_virtual_testbed.png")
     print(f"saved: {root}/fig_virtual_testbed.png")
+    plot_panels(root)
+    print("saved: 5 panel figures")

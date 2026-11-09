@@ -249,7 +249,7 @@ def plot_closed_loop(results, scans, out_path, scan_idx=10):
     rejected = {lb for lb, r in results.items() if r["reject"]}
     panels = [("Under attack（欺骗点已注入）", False),
               ("After T² detection（欺骗轨迹已滤除）", True)]
-    fig, axes = plt.subplots(1, 2, figsize=(13, 6.2), sharex=True, sharey=True)
+    fig, axes = plt.subplots(1, 2, figsize=(12.6, 6.8), sharex=True, sharey=True)
     for ax, (title, filtered) in zip(axes, panels):
         ax.set_facecolor(BG)
         for r_ in (5, 10, 20, 30, 40):
@@ -274,7 +274,7 @@ def plot_closed_loop(results, scans, out_path, scan_idx=10):
             miss_xy = (ego_xy[0] + 9.0, ego_xy[1])
             ax.annotate("残留欺骗点 = 侧方假目标\n（论文局限1：相对速度≈0，未检出）",
                         xy=miss_xy, xytext=(ego_xy[0] + 12, ego_xy[1] - 14),
-                        fontsize=10, color="#fca5a5", zorder=9,
+                        fontsize=11.5, color="#fca5a5", zorder=9,
                         arrowprops=dict(arrowstyle="->", color="#fca5a5",
                                         lw=1.3),
                         bbox=dict(boxstyle="round,pad=0.3", fc="#0b1220",
@@ -286,13 +286,13 @@ def plot_closed_loop(results, scans, out_path, scan_idx=10):
                                zorder=6))
         ax.add_patch(Circle((ego_xy[0], ego_xy[1] + 0.5), 0.5, fc="#bbf7d0",
                             ec="#052e16", lw=1.4, zorder=7))
-        ax.set_title(title, fontsize=12.5)
-        ax.set_xlabel("x (m)", fontsize=10.5)
+        ax.set_title(title, fontsize=14)
+        ax.set_xlabel("x (m)", fontsize=12.5)
         ax.set_aspect("equal")
-        ax.tick_params(colors="#94a3b8", labelsize=9)
+        ax.tick_params(colors="#94a3b8", labelsize=10.5)
         for sp in ax.spines.values():
             sp.set_color("#334155")
-    axes[0].set_ylabel("y (m)", fontsize=10.5)
+    axes[0].set_ylabel("y (m)", fontsize=12.5)
     handles = [
         plt.Line2D([], [], marker="x", ls="", color=SPOOF, ms=9, mew=2,
                    label="欺骗点（注入）"),
@@ -304,11 +304,11 @@ def plot_closed_loop(results, scans, out_path, scan_idx=10):
                    markeredgecolor="#052e16", markeredgewidth=1.5,
                    label="自车 + LiDAR"),
     ]
-    axes[0].legend(handles=handles, fontsize=9.5, loc="upper left",
+    axes[0].legend(handles=handles, fontsize=11.5, loc="upper left",
                    facecolor="#0f172a", edgecolor="#334155",
                    labelcolor="#e2e8f0")
     fig.suptitle(f"闭环仿真（第 {scan_idx} 帧）：2-D LiDAR + 式(2)欺骗注入 + "
-                 "式(5)(6)多普勒 + Hotelling T² 滤除", fontsize=14,
+                 "式(5)(6)多普勒 + Hotelling T² 滤除", fontsize=16,
                  weight="bold")
     fig.tight_layout()
     fig.savefig(out_path, dpi=160, bbox_inches="tight")
