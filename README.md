@@ -44,6 +44,11 @@ results are computer-simulation based (§VII-B), so this reproduction is faithfu
 
 ![Hardware-software mapping](figures/fig_hw_mapping.png)
 
+**仿真硬件原理图**（虚拟器件 + 每个器件框内直接标注实现公式/函数；左下为攻击场景的
+`scan()` 第 0 帧真实渲染——光束、点云、攻击器与三类假目标一目了然）：
+
+![Virtual testbed schematic](figures/fig_virtual_testbed.png)
+
 器件级明细：
 
 | 论文硬件（器件） | 软件对应 | 等效层级 |
@@ -64,7 +69,7 @@ results are computer-simulation based (§VII-B), so this reproduction is faithfu
 ## 快速开始
 
 ```bash
-python3 run_all.py           # 完整精度，约 2–3 分钟，11 个步骤全部输出
+python3 run_all.py           # 完整精度，约 2–3 分钟，12 个步骤全部输出
 python3 run_all.py --quick   # 快速冒烟，约 40 秒
 ```
 

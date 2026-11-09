@@ -329,6 +329,22 @@ def step11_hw_mapping(log):
     log("  均标注等效层级（公式级/模型级/算法级）与未模拟项（红框）")
 
 
+def step12_virtual_testbed(log):
+    """生成"仿真硬件原理图"：虚拟器件 + 每个器件的实现方式。"""
+    from src.hw_mapping import plot_virtual_testbed
+    plot_virtual_testbed(os.path.join(FIG_DIR, "fig_virtual_testbed.png"))
+    log("")
+    log("=" * 70)
+    log("步骤 12：仿真硬件原理图（虚拟器件 + 实现方式）")
+    log("=" * 70)
+    log("  已保存 figures/fig_virtual_testbed.png")
+    log("  面板 A：虚拟干涉 testbed 器件链（激光管/分束器/M0/M1/接收器/示波器，")
+    log("           框内标注各自实现公式）")
+    log("  下左  ：虚拟攻击场景俯视图（scan() 第 0 帧真实渲染：光束、点云、")
+    log("           攻击器、三类假目标）")
+    log("  下右  ：虚拟 LiDAR / 攻击器 / Doppler 信道 / 跟踪检测 的实现说明")
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--quick", action="store_true", help="快速冒烟测试")
@@ -353,6 +369,7 @@ def main():
     step9_closed_loop(log)
     step10_interferometer(log)
     step11_hw_mapping(log)
+    step12_virtual_testbed(log)
 
     log("")
     log(f"全部完成，总耗时 {time.time() - t0:.1f}s；图表在 figures/，数据在 results/")
