@@ -23,7 +23,8 @@ main{width:100%;max-width:1980px;margin:0 auto;padding:10px 26px 60px}
 section{margin-top:34px}
 section > h2{font-size:20px;border-left:4px solid var(--accent);padding-left:10px;margin-bottom:4px}
 section > .desc{color:var(--sub);font-size:14.5px;margin:6px 0 12px}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;transition:border-color .2s}
+.card:hover{border-color:#3a5a8c}
 .row{display:flex;flex-wrap:wrap;gap:14px;align-items:stretch}
 .col{flex:1 1 320px;min-width:280px}
 canvas{width:100%;display:block;border-radius:8px;background:var(--panel2)}
@@ -43,6 +44,15 @@ select{background:var(--panel2);color:var(--txt);border:1px solid var(--line);bo
 .kv b{color:var(--accent)}
 .note{font-size:13.5px;color:var(--sub);margin-top:8px}
 .eq{font-family:"Times New Roman",serif;font-size:16.5px;color:#cfe3ff}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:14px;margin-top:22px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;text-align:center;transition:border-color .2s}
+.stat:hover{border-color:#3a5a8c}
+.stat b{display:block;font-size:26px;color:var(--accent);font-family:"Times New Roman",serif;margin-bottom:4px}
+.stat span{color:var(--sub);font-size:13.5px}
+.ptitle{font-weight:700;color:var(--accent);margin-bottom:10px;font-size:15.5px}
+.tips{margin:12px 0 0;padding-left:18px;color:var(--sub);font-size:13.5px}
+.tips li{margin:7px 0}
+.bignum{font-size:34px;font-weight:800;color:var(--accent);line-height:1.15}
 footer{border-top:1px solid var(--line);margin-top:50px;padding:18px;text-align:center;color:var(--sub);font-size:12.5px}
 footer a{color:var(--accent);text-decoration:none}
 .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13.5px;color:var(--sub);margin-top:8px}
@@ -64,6 +74,12 @@ footer a{color:var(--accent);text-decoration:none}
   <a href="#s5">⑤ 统计功效</a>
 </nav>
 <main>
+<div class="stats">
+  <div class="stat"><b>2 : 1</b><span>合法回波（往返）与欺骗信号（单程）的多普勒频移之比</span></div>
+  <div class="stat"><b>&lt; $60</b><span>论文演示的欺骗攻击硬件成本（光电二极管+延时+激光管）</span></div>
+  <div class="stat"><b>50 样本 · 150 ms</b><span>最差条件下的检测样本量与采集时延（16 线 20Hz LiDAR）</span></div>
+  <div class="stat"><b>F1 0.923 / 0.97</b><span>欺骗比例 10% / 40% 时的检测分数（仓库复现 0.924 / 0.976）</span></div>
+</div>
 
 <!-- ================= 1. 多普勒签名 ================= -->
 <section id="s1">
@@ -79,7 +95,7 @@ footer a{color:var(--accent);text-decoration:none}
       <label><input type="checkbox" id="slowMo" checked> 慢放（×10⁻⁷ 时间缩放）</label>
     </div>
     <div class="row">
-      <div class="col" style="flex:2.6 1 520px"><canvas id="cv1" height="380"></canvas></div>
+      <div class="col" style="flex:2.6 1 520px"><canvas id="cv1" height="480"></canvas></div>
       <div class="col">
         <div class="card" style="background:var(--panel2)">
           <div class="eq">式(5) 合法（往返）：Δf ≈ <span class="eq">2v/c · f₀</span></div>
@@ -160,9 +176,9 @@ footer a{color:var(--accent);text-decoration:none}
       <span class="badge" id="verdict" style="visibility:hidden">—</span>
     </div>
     <div class="row">
-      <div class="col"><canvas id="cv3a" height="330"></canvas>
+      <div class="col"><canvas id="cv3a" height="360"></canvas>
         <p class="note" style="text-align:center">v<sub>Dop</sub> vs v<sub>ToF</sub> 散点（虚线 y=x 为一致参考）</p></div>
-      <div class="col"><canvas id="cv3b" height="330"></canvas>
+      <div class="col"><canvas id="cv3b" height="360"></canvas>
         <p class="note" style="text-align:center">t 统计量 vs 临界值 t<sub>n-1</sub>(0.025)</p></div>
     </div>
     <div class="kv">
@@ -186,12 +202,23 @@ footer a{color:var(--accent);text-decoration:none}
       <label>攻击者方向 φ<sub>a</sub> = <span id="paL">90</span>° <input type="range" id="paSl" min="0" max="180" step="5" value="90" style="width:110px"></label>
     </div>
     <div class="row">
-      <div class="col"><canvas id="cv4" height="370"></canvas>
+      <div class="col" style="flex:2 1 560px"><canvas id="cv4" height="420"></canvas>
         <p class="note" style="text-align:center">|v<sub>Dop</sub><sup>coop</sup>| − |v<sub>Dop</sub><sup>ego</sup>| 随攻击者速度 |v<sub>a</sub>| 的变化（θ=90°，攻击者在正前方）</p></div>
-    </div>
-    <div class="kv">
-      <div>当前 |v<sub>a</sub>| = <b id="vaCur">10</b> m/s 处差异 = <b id="diffCur">—</b> m/s</div>
-      <div id="coopNote" class="badge ok">两 LiDAR 异速 → 可检测</div>
+      <div class="col" style="flex:1 1 280px">
+        <div class="card" style="background:var(--panel2);height:100%">
+          <div class="ptitle">当前状态</div>
+          <div class="kv" style="flex-direction:column;align-items:stretch;gap:8px">
+            <div>攻击者速度 |v<sub>a</sub>| = <b id="vaCur">10</b> m/s</div>
+            <div>两车多普勒速度差 = <b id="diffCur">—</b> m/s</div>
+          </div>
+          <div style="margin-top:12px"><span id="coopNote" class="badge ok">两 LiDAR 异速 → 可检测</span></div>
+          <ul class="tips">
+            <li>拖动两车速度滑杆：速度差越大，曲线偏离 0 越多，检测越可靠。</li>
+            <li>把两车调成<b>同速</b>（如 2.0 / 2.0）——差异恒为 0，攻击不可检测（论文图 11d）。</li>
+            <li>攻击者按命题 1 只能"配平"一台 LiDAR 的速度，第二台必露馅——一把钥匙开不了两把锁。</li>
+          </ul>
+        </div>
+      </div>
     </div>
   </div>
 </section>
@@ -212,15 +239,25 @@ footer a{color:var(--accent);text-decoration:none}
       <button id="recalc">重新计算</button>
     </div>
     <div class="row">
-      <div class="col"><canvas id="cv5" height="370"></canvas>
+      <div class="col" style="flex:2 1 560px"><canvas id="cv5" height="420"></canvas>
         <p class="note" style="text-align:center">经验功效随样本量 n 的变化（虚线 = 目标 0.9，α=0.05）</p></div>
+      <div class="col" style="flex:1 1 280px">
+        <div class="card" style="background:var(--panel2);height:100%">
+          <div class="ptitle">当前设置的计算结果</div>
+          <div style="text-align:center;margin:6px 0 2px"><span class="bignum" id="nStar">—</span>
+            <div class="note" style="margin-top:0">达到功效 0.9 的最小样本量 n*</div></div>
+          <div class="kv" style="flex-direction:column;align-items:stretch;gap:8px;margin-top:10px">
+            <div>该点功效 = <b id="pwStar">—</b></div>
+            <div>F1 = 2(1−β)/(2(1−β)+α+β) = <b id="f1Lab">—</b></div>
+          </div>
+          <ul class="tips">
+            <li>欺骗比例 p 越低（&lt;0.4）所需样本急剧上升——零星攻击最难抓。</li>
+            <li>SNR 每降一个数量级，样本量约×10（图 14 趋势）。</li>
+            <li>演示用一维 t 检验（式 17），n* 略高于论文的 50；论文与仓库用二维 T²（式 18/19，K=47.75）：城区 p=0.1、SNR=10⁻⁴ 时 n*=50、F1=0.923，p=0.4 时 F1≈0.97。</li>
+          </ul>
+        </div>
+      </div>
     </div>
-    <div class="kv">
-      <div>最小样本量 n* = <b id="nStar">—</b></div>
-      <div>该点功效 = <b id="pwStar">—</b></div>
-      <div>F1 = 2(1−β)/(2(1−β)+α+β) = <b id="f1Lab">—</b></div>
-    </div>
-    <p class="note">说明：演示用一维 t 检验（式 17），故 n* 略高于论文的 50——论文与仓库用二维 Hotelling T²（式 18/19，K=47.75 锚点校准），城区 p=0.1、SNR=10⁻⁴ 时 n*=50、F1=0.923；p=0.4 时 F1≈0.97（§VI-F 锚点，仓库复现 0.924 / 0.976）。</p>
   </div>
 </section>
 
@@ -324,14 +361,14 @@ const C=3e8, LAMBDA=905e-9, K=47.75, N=256;
       for(let i=0;i<=w;i++){c[i?"lineTo":"moveTo"](x-w/2+i,top+h*0.74-5*Math.sin(i/w*f2*2*Math.PI));}
       c.stroke();c.lineWidth=1;
       c.fillStyle=color;c.font="12.5px sans-serif";c.textAlign="center";
-      c.fillText(label,x,top+13);                          // 标签画在框内顶部
+      c.fillText(label,x,top+17);                          // 标签画在框内顶部
       c.restore();
     }
     // 底部并排波形区（任何模式都可见，非激活淡化）
-    const waveW=Math.min(170,W*0.40), waveTop=H-58, half=Math.max(95,waveW/2+14);
-    drawWave(ctx,W*0.5-half,waveTop,waveW,42,v*2,"#4ade80","回波 Δf = 2v/c·f₀（双程）",
+    const waveW=Math.min(320,W*0.36), waveTop=H-72, half=waveW/2+18;
+    drawWave(ctx,W*0.5-half,waveTop,waveW,52,v*2,"#4ade80","回波 Δf = 2v/c·f₀（双程）",
              (mode==="legit"||mode==="both")?1:0.25);
-    drawWave(ctx,W*0.5+half,waveTop,waveW,42,v,"#f87171","欺骗信号 Δf = v/c·f₀（单程）",
+    drawWave(ctx,W*0.5+half,waveTop,waveW,52,v,"#f87171","欺骗信号 Δf = v/c·f₀（单程）",
              (mode==="spoof"||mode==="both")?1:0.25);
     requestAnimationFrame(draw);
   };
@@ -682,9 +719,15 @@ const C=3e8, LAMBDA=905e-9, K=47.75, N=256;
   $("recalc").onclick=calc; rng=mulberry32(20260709); calc();
 })();
 
-/* 导航高亮 */
-document.querySelectorAll("nav a").forEach(a=>a.onclick=()=>{
-  document.querySelectorAll("nav a").forEach(x=>x.classList.remove("on"));a.classList.add("on")});
+/* 导航滚动高亮（scroll-spy） */
+const navLinks=[...document.querySelectorAll("nav a")];
+navLinks.forEach(a=>a.onclick=()=>{
+  navLinks.forEach(x=>x.classList.remove("on"));a.classList.add("on")});
+const spy=new IntersectionObserver(es=>{
+  es.forEach(e=>{if(e.isIntersecting){
+    navLinks.forEach(l=>l.classList.toggle("on",l.getAttribute("href")==="#"+e.target.id))}});
+},{rootMargin:"-35% 0px -55% 0px"});
+document.querySelectorAll("section[id]").forEach(sec=>spy.observe(sec));
 </script>
 </body>
 </html>
