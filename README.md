@@ -44,26 +44,26 @@ results are computer-simulation based (§VII-B), so this reproduction is faithfu
 
 面板 A —— 干涉 testbed（Fig.6/7）的映射：
 
-![HW-SW mapping: interferometer](figures/fig_map_interferometer.png)
+![HW-SW mapping: interferometer](figures/fig_map_interferometer.png?v=7)
 
 面板 B —— 实机攻击演示（Fig.2/3/4）的映射：
 
-![HW-SW mapping: attack demo](figures/fig_map_attack.png)
+![HW-SW mapping: attack demo](figures/fig_map_attack.png?v=7)
 
 **仿真硬件原理图**（虚拟器件 + 每个器件框内直接标注实现公式/函数）。拆为三张单图便于阅读；
 组合版 `figures/fig_virtual_testbed.png`、`figures/fig_hw_mapping.png` 适合放进汇报 PPT：
 
 ① 虚拟干涉 testbed 器件链（框内 = 实现公式）：
 
-![Virtual interferometer](figures/fig_virtual_interferometer.png)
+![Virtual interferometer](figures/fig_virtual_interferometer.png?v=7)
 
 ② 虚拟攻击场景（`scan()` 第 0 帧真实渲染：光束、点云、攻击器与三类假目标）：
 
-![Virtual attack scene](figures/fig_virtual_scene.png)
+![Virtual attack scene](figures/fig_virtual_scene.png?v=7)
 
 ③ 虚拟器件实现方式（LiDAR / 攻击器 / Doppler 信道 / 跟踪+检测）：
 
-![Virtual device implementations](figures/fig_virtual_impl.png)
+![Virtual device implementations](figures/fig_virtual_impl.png?v=7)
 
 器件级明细：
 
@@ -98,20 +98,20 @@ python3 run_all.py --quick   # 快速冒烟，约 40 秒
 同一攻击者速度在两个速度不同的 LiDAR 处诱导出不同的 Doppler 速度；当两 LiDAR 速度相同（子图 d）
 时差恒为 0——与论文结论一致：协同检测要求参与 LiDAR 速度不同。
 
-![Fig.11 reproduction](figures/fig11.png)
+![Fig.11 reproduction](figures/fig11.png?v=7)
 
 ### 2. Fig.13 — 最小样本量 vs 欺骗比例（SNR=1e-4）
 
 欺骗比例 p 越小，所需样本量越大，**p < 0.4 后急剧上升**（city：p=0.1 需 50 个样本，
 p≥0.6 仅需 4 个）——复现论文正文对该图的关键描述。
 
-![Fig.13 reproduction](figures/fig13.png)
+![Fig.13 reproduction](figures/fig13.png?v=7)
 
 ### 3. Fig.14 — 最小样本量 vs SNR（p=0.1，log-log）
 
 SNR 每降一个数量级，所需样本量约 ×10（city：51 → 477 → 4634），近似 n ∝ 1/SNR。
 
-![Fig.14 reproduction](figures/fig14.png)
+![Fig.14 reproduction](figures/fig14.png?v=7)
 
 ### 4. 与论文数值对照
 
@@ -140,7 +140,7 @@ SNR 每降一个数量级，所需样本量约 ×10（city：51 → 477 → 4634
 噪声用式(28)校准模型）→ 目标级跟踪配对 (v_Dop, v_ToF) → 用式(18)(19)的 T² 检测器逐目标判决
 → 滤除被判欺骗的轨迹。左图为攻击中点云（红色 × 为注入的假点），右图为检测滤除后：
 
-![Closed-loop simulation](figures/fig_closed_loop.png)
+![Closed-loop simulation](figures/fig_closed_loop.png?v=7)
 
 判决结果（多随机种子稳定）：
 
@@ -164,7 +164,7 @@ SNR 每降一个数量级，所需样本量约 ×10（city：51 → 477 → 4634
 论文用 ThorLabs 光学干涉 testbed 证明"能从激光信号提取多普勒频移"。其信号模型
 （§IV-B1 的 YLO/YM/Pout 公式）已完整给出，故无需硬件即可定量复现：
 
-![Interferometer simulation](figures/fig_interferometer.png)
+![Interferometer simulation](figures/fig_interferometer.png?v=7)
 
 | 项目 | 论文 | 本仿真 | 状态 |
 |---|---|---|---|
