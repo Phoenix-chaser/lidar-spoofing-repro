@@ -315,6 +315,20 @@ def step10_interferometer(log):
     log("  已保存 figures/fig_interferometer.png 与 results/interferometer.csv")
 
 
+def step11_hw_mapping(log):
+    """生成"论文硬件实验 ↔ 软件模拟"映射图（器件级标注 + 等效层级）。"""
+    from src.hw_mapping import plot_hw_mapping
+    plot_hw_mapping(os.path.join(FIG_DIR, "fig_hw_mapping.png"))
+    log("")
+    log("=" * 70)
+    log("步骤 11：硬件实验 ↔ 软件模拟映射图")
+    log("=" * 70)
+    log("  已保存 figures/fig_hw_mapping.png")
+    log("  面板 A：干涉 testbed（激光管/分束器/M0/M1/OPT101/示波器 → 干涉仿真模块）")
+    log("  面板 B：实机攻击演示（YD X2L/攻击器三件套 → 闭环仿真各环节）")
+    log("  均标注等效层级（公式级/模型级/算法级）与未模拟项（红框）")
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--quick", action="store_true", help="快速冒烟测试")
@@ -338,6 +352,7 @@ def main():
     step8_analytic_check(log, det.NOISE_SCALE_K, trials)
     step9_closed_loop(log)
     step10_interferometer(log)
+    step11_hw_mapping(log)
 
     log("")
     log(f"全部完成，总耗时 {time.time() - t0:.1f}s；图表在 figures/，数据在 results/")
